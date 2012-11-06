@@ -32,12 +32,13 @@
 (defvar stripe-highlight-overlays nil
   "The overlays for `stripe-buffer'.")
 
-(make-variable-buffer-local 'stripe-highlight-face)
 (make-variable-buffer-local 'stripe-highlight-overlays)
 
 (defvar stripe-max-buffer-size 50000
   "Stripe buffer isn't really suitable for large buffers.
 Set to nil, if you want it enabled no matter the size")
+
+(defvar stripe-height 3)
 
 (defun stripe-buffer-clear-stripes ()
   "Clear stripe overlays in current buffer"
@@ -51,25 +52,42 @@ Set to nil, if you want it enabled no matter the size")
     (return-from stripe-buffer-jit-lock))
   (save-excursion
     (goto-char (point-min))
-    (forward-line)
+    (forward-line stripe-height)
     (while (not (eobp))
       (let ((overlay (make-overlay
                       (line-beginning-position)
-                      (min (1+ (line-end-position))
+                      (min (1+ (progn
+                                (forward-line (1- stripe-height))
+                                (line-end-position)))
                            (point-max)))))
         (overlay-put overlay 'face stripe-highlight-face)
         (push overlay stripe-highlight-overlays)
-        (forward-line 2)))))
+        (forward-line (1+ stripe-height))))))
 
-(defun org-table-stripes-jit-lock (beginning end)
-  (stripe-buffer-clear-stripes)
-  (save-excursion
-    (goto-char (point-min))
-    (while (search-forward-regexp "^[ 	]*\\([|+].+[|+]\\)$" nil t)
-      (let ((overlay (make-overlay (match-beginning 1) (match-end 1))))
-        (overlay-put overlay 'face stripe-highlight-face)
-        (push overlay stripe-highlight-overlays)
-        (forward-line 2)))))
+(defun org-table-stripes-jit-lock (&optional beginning end)
+  "Originally made for org-mode tables, but can be used on any
+ table with org or table.el syntax. Can be called interactively
+ ex. while viewing the output from MySql select"
+  (interactive)
+  (let ((last-line (line-number-at-pos (point-max)))
+        (in-table-regex "^[ 	]*\\([|+].+[|+]\\) *$"))
+    (stripe-buffer-clear-stripes)
+    (save-excursion
+      (goto-char (point-min))
+      (while (search-forward-regexp in-table-regex nil t)
+        (dotimes (iter (1- stripe-height))
+          (when (save-excursion
+                  (forward-line)
+                  (string-match-p
+                   in-table-regex
+                   (buffer-substring
+                    (line-beginning-position)
+                    (line-end-position))))
+            (forward-line)))
+        (let ((overlay (make-overlay (match-beginning 1) (line-end-position))))
+          (overlay-put overlay 'face stripe-highlight-face)
+          (push overlay stripe-highlight-overlays)
+          (forward-line (1+ stripe-height)))))))
 
 ;;; Interface
 (define-minor-mode stripe-buffer-mode
