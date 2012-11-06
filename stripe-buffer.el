@@ -16,6 +16,8 @@
 ;; Othewise the line highlighting will be obscured by stripes.
 ;;
 
+(require 'cl)
+
 (defface stripe-highlight
     '((((class color) (background dark))
        (:background "#444444"))
