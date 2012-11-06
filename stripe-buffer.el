@@ -38,7 +38,7 @@
   "Stripe buffer isn't really suitable for large buffers.
 Set to nil, if you want it enabled no matter the size")
 
-(defvar stripe-height 3)
+(defvar stripe-height 1)
 
 (defun stripe-buffer-clear-stripes ()
   "Clear stripe overlays in current buffer"
