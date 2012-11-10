@@ -7,20 +7,20 @@
 ;; The project is hosted at https://github.com/sabof/stripe-buffer
 ;; The latest version, and all the relevant information can be found there.
 
+;;; Code:
+
 (require 'cl)
 
 (defgroup stripe-buffer nil
-  "Use different background for even and odd lines"
-  :group 'wp
-  )
+  "Use different background for even and odd lines."
+  :group 'wp)
 
 (defface stripe-highlight
     '((((class color) (background dark))
        (:background "#444444"))
       (((class color) (background light))
        (:background "#CCCCCC")))
-  "Face for stripes."
-  :group 'stripe-buffer)
+  "Face for stripes.")
 
 (defcustom stripe-max-buffer-size 0
   "Don't add stripes if buffer has more characters than this.
