@@ -119,7 +119,7 @@ ex. while viewing the output from MySql select."
          (stripe-buffer-mode 1)
          (setq cursor-type nil)
          (hl-line-mode 1))
-       (require 'hl-line+)))
+       (hl-line-mode 1)))
 
 (provide 'stripe-buffer)
 
