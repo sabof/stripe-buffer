@@ -1,7 +1,8 @@
 # stripe-buffer mode
 Use different background for even and odd lines
-
 Based on stripe-buffer.el by Andy Steward
+
+![screenshot](https://github.com/sabof/stripe-buffer/raw/master/screenshot.png)
 
 ## Usage:
     M-x stripe-buffer-mode
