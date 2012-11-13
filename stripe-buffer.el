@@ -8,6 +8,8 @@
 ;; The project is hosted at https://github.com/sabof/stripe-buffer
 ;; The latest version, and all the relevant information can be found there.
 
+;;; License:
+
 ;; This file is NOT part of GNU Emacs.
 ;;
 ;; This program is free software; you can redistribute it and/or
