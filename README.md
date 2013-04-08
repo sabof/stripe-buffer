@@ -15,4 +15,4 @@ If you have hl-line+ installed, it will also change the cursor to a highlighted 
 
 ### Adds stripes to tables in org-mode
 
-    (add-hook 'org-mode-hook 'org-table-stripes-enable)
+    (add-hook 'org-mode-hook 'stripes-org-table-enable)
