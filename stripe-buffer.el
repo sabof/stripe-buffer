@@ -129,6 +129,7 @@ ex. while viewing the output from MySql select."
 
 (defun stripe-org-tables-enable ()
   "Add stripes to tables in org mode."
+  (interactive)
   (jit-lock-register 'stripe-org-table-jit-lock))
 
 (defalias 'org-table-stripes-enable 'stripe-org-tables-enable
@@ -136,6 +137,7 @@ ex. while viewing the output from MySql select."
 
 (defun stripe-listify-buffer ()
   "Turn on `stripe-buffer-mode' and `hl-line-mode'."
+  (interactive)
   (stripe-buffer-mode 1)
   (hl-line-mode 1))
 
