@@ -143,5 +143,7 @@ ex. while viewing the output from MySql select."
       (hl-line-mode 1)))
 
 (provide 'stripe-buffer)
-
+;; Local Variables:
+;; indent-tabs-mode: nil
+;; End:
 ;;; stripe-buffer.el ends here
