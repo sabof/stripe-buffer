@@ -36,8 +36,6 @@
 
 ;;; Code:
 
-(require 'cl)
-
 (defgroup stripe-buffer nil
   "Use different background for even and odd lines."
   :group 'wp)
@@ -72,26 +70,25 @@ Set to 0 or nil, if you want stripes no matter the size."
   (mapc 'delete-overlay stripe-highlight-overlays)
   (setq stripe-highlight-overlays nil))
 
-(defun* stripe-buffer-jit-lock (&optional beginning end)
+(defun stripe-buffer-jit-lock (&optional beginning end)
   (stripe-buffer-clear-stripes)
-  (when (and (numberp stripe-max-buffer-size)
-             (not (zerop stripe-max-buffer-size))
-             (> (point-max) stripe-max-buffer-size))
-    (return-from stripe-buffer-jit-lock))
-  (save-excursion
-    (goto-char (point-min))
-    (forward-line stripe-height)
-    (while (not (eobp))
-      (let ((overlay (make-overlay
-                      (line-beginning-position)
-                      (min (1+ (progn
-                                 (forward-line
-                                  (1- stripe-height))
-                                 (line-end-position)))
-                           (point-max)))))
-        (overlay-put overlay 'face stripe-highlight-face)
-        (push overlay stripe-highlight-overlays)
-        (forward-line (1+ stripe-height))))))
+  (unless (and (numberp stripe-max-buffer-size)
+               (not (zerop stripe-max-buffer-size))
+               (> (point-max) stripe-max-buffer-size))
+    (save-excursion
+      (goto-char (point-min))
+      (forward-line stripe-height)
+      (while (not (eobp))
+        (let ((overlay (make-overlay
+                        (line-beginning-position)
+                        (min (1+ (progn
+                                   (forward-line
+                                    (1- stripe-height))
+                                   (line-end-position)))
+                             (point-max)))))
+          (overlay-put overlay 'face stripe-highlight-face)
+          (push overlay stripe-highlight-overlays)
+          (forward-line (1+ stripe-height)))))))
 
 (defun stripe-org-table-jit-lock (&optional beginning end)
   "Originally made for org-mode tables, but can be used on any
