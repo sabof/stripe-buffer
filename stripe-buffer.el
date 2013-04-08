@@ -40,7 +40,8 @@
        (:background "#444444"))
       (((class color) (background light))
        (:background "#CCCCCC")))
-  "Face for stripes.")
+  "Face for stripes."
+  :group 'stripe-buffer)
 
 (defcustom stripe-max-buffer-size 0
   "Don't add stripes if buffer has more characters than this.
