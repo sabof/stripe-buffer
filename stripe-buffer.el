@@ -117,14 +117,12 @@ ex. while viewing the output from MySql select."
 (define-minor-mode stripe-buffer-mode
   "Stripe buffer mode"
   nil nil nil
-  (if stripe-buffer-mode
-      (progn
-        (jit-lock-register 'stripe-buffer-jit-lock)
-        (stripe-buffer-jit-lock))
-      (progn
-        (jit-lock-unregister 'stripe-buffer-jit-lock)
-        (stripe-buffer-clear-stripes)
-        )))
+  (cond (stripe-buffer-mode
+         (jit-lock-register 'stripe-buffer-jit-lock)
+         (stripe-buffer-jit-lock))
+        (t
+         (jit-lock-unregister 'stripe-buffer-jit-lock)
+         (stripe-buffer-clear-stripes))))
 
 (defun stripe-org-tables-enable ()
   "Add stripes to tables in org mode."
