@@ -50,9 +50,9 @@
 
 (defcustom stripe-max-buffer-size 0
   "Don't add stripes if buffer has more characters than this.
-This is useful, since a large number of overlays can make editing slow.
-Suggested value: 50000
-Set to 0 or nil, if you want stripes no matter the size."
+This is useful, since a large number of overlays can make editing
+slow.  When the value is 0 stripes are added regardless of the
+number of characters.  50000 is probably a good value."
   :group 'stripe-buffer
   :type 'integer)
 
