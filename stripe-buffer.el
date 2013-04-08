@@ -10,8 +10,9 @@
 
 ;;; Commentary:
 
-;; Use different background colors for even and odd lines.  And yet
-;; another color for the current line.
+;; Use different background colors for even and odd lines.  With the
+;; help of library `hl-line' yet another color can be used for the
+;; current line.
 
 ;; The project is hosted at https://github.com/sabof/stripe-buffer
 
@@ -134,6 +135,11 @@ ex. while viewing the output from MySql select."
 
 (defalias 'org-table-stripes-enable 'stripe-org-tables-enable
   "Backward compatibility")
+
+(defun turn-on-stripe-buffer-mode ()
+  "Turn on `stripe-buffer-mode'."
+  (interactive)
+  (hl-line-mode 1))
 
 (defun stripe-listify-buffer ()
   "Turn on `stripe-buffer-mode' and `hl-line-mode'."
