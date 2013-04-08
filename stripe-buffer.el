@@ -6,8 +6,10 @@
 
 ;;; Commentary:
 
+;; Use different background colors for even and odd lines.  And yet
+;; another color for the current line.
+
 ;; The project is hosted at https://github.com/sabof/stripe-buffer
-;; The latest version, and all the relevant information can be found there.
 
 ;;; License:
 
@@ -132,14 +134,9 @@ ex. while viewing the output from MySql select."
   "Backward compatibility")
 
 (defun stripe-listify-buffer ()
-  ;; (require 'hl-line)
-  (if (featurep 'hl-line+)
-      (progn
-        (require 'hl-line+)
-        (stripe-buffer-mode 1)
-        (setq cursor-type nil)
-        (hl-line-mode 1))
-      (hl-line-mode 1)))
+  "Turn on `stripe-buffer-mode' and `hl-line-mode'."
+  (stripe-buffer-mode 1)
+  (hl-line-mode 1))
 
 (eval-after-load 'hl-line
   '(unless (require 'hl-line+ nil t)
