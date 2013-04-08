@@ -1,7 +1,8 @@
 ;;; stripe-buffer.el --- Use a different background for even and odd lines
-;;; Version: 0.1
-;;; Author: sabof
-;;; URL: https://github.com/sabof/stripe-buffer
+
+;; Version: 0.1
+;; Author: sabof
+;; URL: https://github.com/sabof/stripe-buffer
 
 ;;; Commentary:
 
