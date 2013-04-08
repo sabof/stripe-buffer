@@ -36,10 +36,10 @@
   :group 'wp)
 
 (defface stripe-highlight
-    '((((class color) (background dark))
-       (:background "#444444"))
-      (((class color) (background light))
-       (:background "#CCCCCC")))
+  '((((class color) (background dark))
+     (:background "#444444"))
+    (((class color) (background light))
+     (:background "#CCCCCC")))
   "Face for stripes."
   :group 'stripe-buffer)
 
@@ -114,7 +114,7 @@ ex. while viewing the output from MySql select."
 ;;; Interface
 
 (define-minor-mode stripe-buffer-mode
-    "Stripe buffer mode"
+  "Stripe buffer mode"
   nil nil nil
   (if stripe-buffer-mode
       (progn
