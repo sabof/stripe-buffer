@@ -1,9 +1,10 @@
 # stripe-buffer mode
 Use different background for even and odd lines
 
-Based on stripe-buffer.el by Andy Steward
-
 ![screenshot](https://github.com/sabof/stripe-buffer/raw/master/screenshot.png)
+
+Based on the [original](http://www.emacswiki.org/emacs/StripeBuffer)
+`stripe-buffer.el` by Andy Steward.
 
 ## Usage:
 
