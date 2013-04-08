@@ -141,6 +141,11 @@ ex. while viewing the output from MySql select."
         (hl-line-mode 1))
       (hl-line-mode 1)))
 
+(eval-after-load 'hl-line
+  '(unless (require 'hl-line+ nil t)
+     (defadvice hl-line-highlight (after set-priority activate)
+       (overlay-put hl-line-overlay 'priority 10))))
+
 (provide 'stripe-buffer)
 ;; Local Variables:
 ;; indent-tabs-mode: nil
