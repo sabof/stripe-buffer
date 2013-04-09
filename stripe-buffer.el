@@ -86,9 +86,9 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
         (forward-line 1))
       (cons win-start (point)))))
 
-(cl-defun sb/buffer-visible-regions (&optional (buffer-or-name (current-buffer)))
-  (let (( windows (get-buffer-window-list buffer-or-name nil 'visible)))
-    (mapcar 'sb/window-limits windows)))
+(defun sb/buffer-visible-regions (&optional buffer-or-name)
+  (mapcar 'sb/window-limits
+          (get-buffer-window-list buffer-or-name nil 'visible)))
 
 (defun sb/compress-ranges (ranges)
   (let* (( dirty (cl-sort (cl-copy-list ranges)
@@ -163,7 +163,7 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
           ))
       (mapc 'delete-overlay available))))
 
-(cl-defun sb/redraw-window (&optional (window (selected-window)) &rest ignore)
+(defun sb/redraw-window (&optional window &rest ignore)
   (let* (( region (sb/window-limits window))
          ( old-overlays
            (cl-remove-if-not
