@@ -98,8 +98,46 @@ number of characters.  50000 is probably a good value."
                                    (line-end-position)))
                              (point-max)))))
           (overlay-put overlay 'face stripe-highlight-face)
+          (overlay-put overlay 'is-stripe t)
           (push overlay stripe-highlight-overlays)
           (forward-line (1+ stripe-height)))))))
+
+(defun* stripe-buffer-jit-lock (&optional beginning end)
+  (stripe-buffer-clear-stripes)
+  (condition-case error
+      (let* (( interval
+               (* 2 stripe-height))
+             ( get-overlay
+               (lambda ()))
+             ( draw-stripe
+               (lambda (height)
+                 (let (( overlay
+                         (make-overlay
+                          (point)
+                          (progn
+                            (forward-line height)
+                            (point)))))
+                   (overlay-put overlay 'face stripe-highlight-face)
+                   (overlay-put overlay 'is-stripe t)
+                   (push overlay stripe-highlight-overlays))))
+             ( goto-start-pos
+               (lambda ()
+                 (let (( start-offset (mod (line-number-at-pos) interval)))
+                   (if (< start-offset stripe-height) ; in first part
+                       (progn
+                         (forward-line (- stripe-height start-offset))
+                         (funcall draw-stripe stripe-height))
+                       (funcall draw-stripe (- interval start-offset))
+                       )))))
+        (save-excursion
+          (cl-dolist (region (es-buffer-visible-regions-merged))
+            (goto-char (car region))
+            (funcall goto-start-pos)
+            (while (< (point) (cdr region))
+              (forward-line stripe-height)
+              (funcall draw-stripe stripe-height)
+              ))))
+    (error (debug error))))
 
 (defun stripe-org-table-jit-lock (&optional beginning end)
   "Originally made for org-mode tables, but can be used on any
@@ -133,10 +171,16 @@ ex. while viewing the output from MySql select."
   nil nil nil
   (if stripe-buffer-mode
       (progn
-        (jit-lock-register 'stripe-buffer-jit-lock)
+        (add-hook 'post-command-hook 'stripe-buffer-jit-lock nil t)
+        (add-hook 'window-scroll-functions 'stripe-buffer-jit-lock nil t)
+        (add-hook 'change-major-mode-hook 'stripe-buffer-clear-stripes nil t)
+        (add-hook 'window-configuration-change-hook 'stripe-buffer-jit-lock nil t)
         (stripe-buffer-jit-lock))
       (progn
-        (jit-lock-unregister 'stripe-buffer-jit-lock)
+        (remove-hook 'post-command-hook 'stripe-buffer-jit-lock t)
+        (remove-hook 'window-scroll-functions 'stripe-buffer-jit-lock t)
+        (remove-hook 'change-major-mode-hook 'stripe-buffer-clear-stripes t)
+        (remove-hook 'window-configuration-change-hook 'stripe-buffer-jit-lock t)
         (stripe-buffer-clear-stripes)
         )))
 
