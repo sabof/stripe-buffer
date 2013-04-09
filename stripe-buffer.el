@@ -172,14 +172,14 @@ ex. while viewing the output from MySql select."
      ))
 
 (defun stripe-wdired-enable-cursor ()
-  (when stripe-buffer-listified
+  (when (and stripe-buffer-mode stripe-buffer-listified)
     (setq cursor-type t)))
 
 (add-hook 'wdired-mode-hook 'stripe-wdired-enable-cursor)
 
 (defadvice wdired-finish-edit
     (before stripe-hide-cursor activate)
-  (when stripe-buffer-listified
+  (when (and stripe-buffer-mode stripe-buffer-listified)
     (setq cursor-type nil)))
 
 (provide 'stripe-buffer)
