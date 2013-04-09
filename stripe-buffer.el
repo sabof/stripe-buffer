@@ -66,6 +66,9 @@ number of characters.  50000 is probably a good value."
 (defvar stripe-highlight-overlays nil)
 (make-variable-buffer-local 'stripe-highlight-overlays)
 
+(defvar stripe-buffer-listified nil)
+(make-variable-buffer-local 'stripe-buffer-listified)
+
 (defun stripe-buffer-clear-stripes ()
   "Clear stripe overlays in current buffer."
   (mapc 'delete-overlay stripe-highlight-overlays)
@@ -146,6 +149,7 @@ ex. while viewing the output from MySql select."
 (defun stripe-listify-buffer ()
   "Turn on `stripe-buffer-mode' and `hl-line-mode'."
   (interactive)
+  (setq cursor-type t)
   (stripe-buffer-mode 1)
   (hl-line-mode 1))
 
@@ -157,6 +161,17 @@ ex. while viewing the output from MySql select."
          (overlay-put hl-line-overlay 'priority 10)))
 
      ))
+
+(defun stripe-wdired-enable-cursor ()
+  (when stripe-buffer-listified
+    (setq cursor-type t)))
+
+(add-hook 'wdired-mode-hook 'stripe-wdired-enable-cursor)
+
+(defadvice wdired-finish-edit
+    (before stripe-hide-cursor activate)
+  (when stripe-buffer-listified
+    (setq cursor-type nil)))
 
 (provide 'stripe-buffer)
 ;; Local Variables:
