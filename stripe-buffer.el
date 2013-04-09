@@ -64,13 +64,43 @@
 (defvar stripe-highlight-face 'stripe-highlight)
 (defvar stripe-highlight-overlays nil)
 (defvar stripe-buffer-listified nil)
-(defvar stripe-scheduled-redraw nil)
 (mapc 'make-variable-buffer-local
-      '(stripe-scheduled-redraw
-        stripe-buffer-listified
+      '(stripe-buffer-listified
         stripe-highlight-overlays))
 
-(defun stripe-buffer-clear-stripes (&rest ignore)
+(defun sb/ranges-intersection (r1 r2)
+  (let (( r3 (cons (max (car r1) (car r2))
+                   (min (cdr r1) (cdr r2)))))
+    (when (< (car r3) (cdr r3))
+      r3)))
+
+(cl-defun sb/buffer-visible-regions (&optional (buffer-or-name (current-buffer)))
+  (let (( windows (get-buffer-window-list buffer-or-name nil 'visible)))
+    (mapcar (lambda (window) (cons (window-start window) (window-end window t)))
+            windows)))
+
+(defun sb/compress-ranges (ranges)
+  (let* (( dirty (cl-sort (cl-copy-list ranges)
+                          '< :key 'car))
+         clean)
+    (while (cond
+             ( (not dirty)
+               nil)
+             ( (null (cdr dirty))
+               (push (pop dirty) clean)
+               nil)
+             ( (>= (cdr (car dirty))
+                   (car (cadr dirty)))
+               (setq dirty (cons (cons (car (car dirty))
+                                       (cdr (cadr dirty)))
+                                 (nthcdr 2 dirty))))
+             ( t (push (pop dirty) clean))))
+    (nreverse clean)))
+
+(defun sb/buffer-visible-regions-compressed ()
+  (sb/compress-ranges (sb/buffer-visible-regions)))
+
+(defun sb/clear-stripes (&rest ignore)
   "Clear stripe overlays in current buffer."
   (mapc 'delete-overlay stripe-highlight-overlays)
   (setq stripe-highlight-overlays nil))
@@ -123,7 +153,7 @@
           ))
       (mapc 'delete-overlay available))))
 
-(cl-defun stripe-redraw-window (&optional (window (selected-window)) &rest ignore)
+(cl-defun sb/redraw-window (&optional (window (selected-window)) &rest ignore)
   (with-selected-window window
     (let* (( region
              (cons (window-start)
@@ -139,8 +169,8 @@
       (sb/redraw-regions (list region) old-overlays)
       )))
 
-(defun stripe-redraw-all-windows (&rest ignore)
-  (let (( regions (es-buffer-visible-regions-merged))
+(defun sb/redraw-all-windows (&rest ignore)
+  (let (( regions (sb/buffer-visible-regions-compressed))
         ( old-overlays stripe-highlight-overlays))
     (setq stripe-highlight-overlays nil)
     (sb/redraw-regions regions old-overlays)
@@ -158,42 +188,17 @@
 
 (defun sb/visible-table-ranges ()
   (let (( table-ranges (sb/table-ranges))
-        ( visible-ranges (es-buffer-visible-regions-merged))
+        ( visible-ranges (sb/buffer-visible-regions-compressed))
         ( and-ranges ))
     (cl-dolist (tr table-ranges)
       (cl-dolist (vr visible-ranges)
-        (push (es-ranges-intersection tr vr)
+        (push (sb/ranges-intersection tr vr)
               and-ranges)))
-    (es-compress-ranges (remove nil and-ranges))))
+    (sb/compress-ranges (remove nil and-ranges))))
 
 (defun sb/redraw-all-tables (&rest ignore)
-  (stripe-buffer-clear-stripes)
+  (sb/clear-stripes)
   (sb/redraw-regions (sb/visible-table-ranges) nil))
-
-(defun stripe-org-table-jit-lock (&optional beginning end)
-  "Originally made for org-mode tables, but can be used on any
-table with org or table.el syntax. Can be called interactively
-ex. while viewing the output from MySql select."
-  (interactive)
-  (let ((last-line (line-number-at-pos (point-max)))
-        (in-table-regex "^[ 	]*\\([|+].+[|+]\\) *$"))
-    (stripe-buffer-clear-stripes)
-    (save-excursion
-      (goto-char (point-min))
-      (while (search-forward-regexp in-table-regex nil t)
-        (dotimes (iter (1- stripe-height))
-          (when (save-excursion
-                  (forward-line)
-                  (string-match-p
-                   in-table-regex
-                   (buffer-substring
-                    (line-beginning-position)
-                    (line-end-position))))
-            (forward-line)))
-        (let ((overlay (make-overlay (match-beginning 1) (line-end-position))))
-          (overlay-put overlay 'face stripe-highlight-face)
-          (push overlay stripe-highlight-overlays)
-          (forward-line (1+ stripe-height)))))))
 
 ;;; Interface
 
@@ -202,17 +207,17 @@ ex. while viewing the output from MySql select."
   nil nil nil
   (if stripe-buffer-mode
       (progn
-        (add-hook 'post-command-hook 'stripe-redraw-all-windows nil t)
-        (add-hook 'window-scroll-functions 'stripe-redraw-window nil t)
-        (add-hook 'change-major-mode-hook 'stripe-buffer-clear-stripes nil t)
-        (add-hook 'window-configuration-change-hook 'stripe-redraw-all-windows nil t)
-        (stripe-redraw-all-windows))
+        (add-hook 'post-command-hook 'sb/redraw-all-windows nil t)
+        (add-hook 'window-scroll-functions 'sb/redraw-window nil t)
+        (add-hook 'change-major-mode-hook 'sb/clear-stripes nil t)
+        (add-hook 'window-configuration-change-hook 'sb/redraw-all-windows nil t)
+        (sb/redraw-all-windows))
       (progn
-        (remove-hook 'post-command-hook 'stripe-redraw-all-windows t)
-        (remove-hook 'window-scroll-functions 'stripe-redraw-window t)
-        (remove-hook 'change-major-mode-hook 'stripe-buffer-clear-stripes t)
-        (remove-hook 'window-configuration-change-hook 'stripe-redraw-all-windows t)
-        (stripe-buffer-clear-stripes)
+        (remove-hook 'post-command-hook 'sb/redraw-all-windows t)
+        (remove-hook 'window-scroll-functions 'sb/redraw-window t)
+        (remove-hook 'change-major-mode-hook 'sb/clear-stripes t)
+        (remove-hook 'window-configuration-change-hook 'sb/redraw-all-windows t)
+        (sb/clear-stripes)
         )))
 
 (define-minor-mode stripe-table-mode
@@ -222,24 +227,21 @@ ex. while viewing the output from MySql select."
       (progn
         (add-hook 'post-command-hook 'sb/redraw-all-tables nil t)
         (add-hook 'window-scroll-functions 'sb/redraw-all-tables nil t)
-        (add-hook 'change-major-mode-hook 'stripe-buffer-clear-stripes nil t)
+        (add-hook 'change-major-mode-hook 'sb/clear-stripes nil t)
         (add-hook 'window-configuration-change-hook 'sb/redraw-all-tables nil t)
         (sb/redraw-all-tables))
       (progn
         (remove-hook 'post-command-hook 'sb/redraw-all-tables t)
         (remove-hook 'window-scroll-functions 'sb/redraw-all-tables t)
-        (remove-hook 'change-major-mode-hook 'stripe-buffer-clear-stripes t)
+        (remove-hook 'change-major-mode-hook 'sb/clear-stripes t)
         (remove-hook 'window-configuration-change-hook 'sb/redraw-all-tables t)
-        (stripe-buffer-clear-stripes)
+        (sb/clear-stripes)
         )))
 
-(defun stripe-org-tables-enable ()
-  "Add stripes to tables in org mode."
+(defun org-table-stripes-enable
+    "Backward compatibility"
   (interactive)
-  (jit-lock-register 'stripe-org-table-jit-lock))
-
-(defalias 'org-table-stripes-enable 'stripe-org-tables-enable
-  "Backward compatibility")
+  (stripe-table-mode 1))
 
 (defun turn-on-stripe-buffer-mode ()
   "Turn on `stripe-buffer-mode'."
