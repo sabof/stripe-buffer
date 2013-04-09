@@ -78,12 +78,6 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
       '(stripe-buffer-listified
         stripe-highlight-overlays))
 
-(defun sb/ranges-intersection (r1 r2)
-  (let (( r3 (cons (max (car r1) (car r2))
-                   (min (cdr r1) (cdr r2)))))
-    (when (< (car r3) (cdr r3))
-      r3)))
-
 (defun sb/window-limits (&optional window)
   (save-excursion
     (let (( win-start (window-start window)))
@@ -189,24 +183,16 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
     (sb/redraw-regions regions old-overlays)
     ))
 
-(defun sb/table-ranges ()
-  (let (ranges)
-    (save-excursion
-      (goto-char (point-min))
-      (while (search-forward-regexp stripe-in-table-regex nil t)
-        (push (cons (match-beginning 1) (match-end 1)) ranges)
-        ))
-    ranges))
-
 (defun sb/visible-table-ranges ()
-  (let (( table-ranges (sb/table-ranges))
-        ( visible-ranges (sb/buffer-visible-regions-compressed))
-        ( and-ranges ))
-    (cl-dolist (tr table-ranges)
-      (cl-dolist (vr visible-ranges)
-        (push (sb/ranges-intersection tr vr)
-              and-ranges)))
-    (sb/compress-ranges (remove nil and-ranges))))
+  (let (( visible-ranges (sb/buffer-visible-regions-compressed))
+        ranges)
+    (cl-dolist (vr visible-ranges)
+      (save-excursion
+        (goto-char (car vr))
+        (while (search-forward-regexp stripe-in-table-regex (cdr vr) t)
+          (push (cons (match-beginning 1) (match-end 1)) ranges)
+          )))
+    (sb/compress-ranges ranges)))
 
 (defun sb/redraw-all-tables (&rest ignore)
   (sb/clear-stripes)
