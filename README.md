@@ -12,18 +12,20 @@ Based on the [original](http://www.emacswiki.org/emacs/StripeBuffer)
 
 ## Usage:
 
-### Add stripes in dired mode
-
-To use different background colors for even and odd lines use:
+### Common case:
 
     (add-hook 'dired-mode-hook 'turn-on-stripe-buffer-mode)
 
-If you also want to use yet another color for the current line use:
+### Add stripes in list-style modes (ex. dired-mode)
+
+As above, or you can use the following to get a horizontal line instead of a
+cursor. It uses the `stripe-hl-line` face, which you might wish to customize.
 
     (add-hook 'dired-mode-hook 'stripe-listify-buffer)
 
-### Adds stripes to tables in org-mode
+### Adds stripes to tables
 
-In Org-mode you likely want to add stripes only to tables:
+You might want to have stripes only for tables. Whether a line will be
+considered a "table line" is determined by `stripe-in-table-regex`. The default setting supports org-mode and table.el tables, as well as tables printed by mysql.
 
-    (add-hook 'org-mode-hook 'stripes-org-table-enable)
+    (add-hook 'org-mode-hook 'turn-on-stripe-table-mode)
