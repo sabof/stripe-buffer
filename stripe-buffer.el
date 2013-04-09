@@ -63,24 +63,24 @@
 
 (defvar stripe-highlight-face 'stripe-highlight)
 (defvar stripe-highlight-overlays nil)
-(make-variable-buffer-local 'stripe-highlight-overlays)
 (defvar stripe-buffer-listified nil)
-(make-variable-buffer-local 'stripe-buffer-listified)
+(defvar stripe-scheduled-redraw nil)
+(mapc 'make-variable-buffer-local
+      '(stripe-scheduled-redraw
+        stripe-buffer-listified
+        stripe-highlight-overlays))
 
-(defun stripe-buffer-clear-stripes ()
+(defun stripe-buffer-clear-stripes (&rest ignore)
   "Clear stripe overlays in current buffer."
   (mapc 'delete-overlay stripe-highlight-overlays)
   (setq stripe-highlight-overlays nil))
 
-(defun* stripe-buffer-jit-lock (&optional beginning end)
+(defun stripe-redraw-region (regions available)
   (let* (( interval
            (* 2 stripe-height))
-         ( old-overlays
-           (prog1 stripe-highlight-overlays
-             (setq stripe-highlight-overlays nil)))
          ( get-overlay-create
            (lambda (start end)
-             (let ((old-overlay (pop old-overlays)))
+             (let ((old-overlay (pop available)))
                (if old-overlay
                    (progn
                      (move-overlay old-overlay start end)
@@ -88,16 +88,22 @@
                    (make-overlay start end)))))
          ( draw-stripe
            (lambda (height)
-             (let (( overlay
-                     (funcall
-                      get-overlay-create
-                      (point)
-                      (progn
-                        (forward-line height)
-                        (point)))))
-               (overlay-put overlay 'face stripe-highlight-face)
-               (overlay-put overlay 'is-stripe t)
-               (push overlay stripe-highlight-overlays))))
+             ;; region available through dynamic binding
+             (when (< (point) (cdr region))
+               (let (( overlay
+                       (funcall
+                        get-overlay-create
+                        (point)
+                        (progn
+                          (forward-line height)
+                          (if (<= (point) (cdr region))
+                              (point)
+                              (progn
+                                (goto-char (cdr region))
+                                (point)))))))
+                 (overlay-put overlay 'face stripe-highlight-face)
+                 (overlay-put overlay 'is-stripe t)
+                 (push overlay stripe-highlight-overlays)))))
          ( goto-start-pos
            (lambda ()
              (let (( start-offset (mod (line-number-at-pos) interval)))
@@ -108,14 +114,40 @@
                    (funcall draw-stripe (- interval start-offset))
                    )))))
     (save-excursion
-      (cl-dolist (region (es-buffer-visible-regions-merged))
+      (cl-dolist (region regions)
         (goto-char (car region))
         (funcall goto-start-pos)
         (while (< (point) (cdr region))
           (forward-line stripe-height)
           (funcall draw-stripe stripe-height)
           ))
-      (mapc 'delete-overlay old-overlays))))
+      (mapc 'delete-overlay available))))
+
+(cl-defun stripe-redraw-window (&optional (window (selected-window)) &rest ignore)
+  (with-selected-window window
+    (let* (( region
+             (cons (window-start)
+                   (window-end nil t)))
+           ( old-overlays
+             (remove-if-not
+              (lambda (ov) (overlay-get ov 'is-stripe))
+              (overlays-in (car region) (cdr region)))))
+      (setq stripe-highlight-overlays
+            (cl-set-difference
+             stripe-highlight-overlays
+             old-overlays))
+      (stripe-redraw-region (list region) old-overlays)
+      )))
+
+(defun stripe-redraw-all-windows (&rest ignore)
+  (let (( regions (es-buffer-visible-regions-merged))
+        ( old-overlays stripe-highlight-overlays))
+    (setq stripe-highlight-overlays nil)
+    (stripe-redraw-region regions old-overlays)
+    ))
+
+(defun* stripe-buffer-jit-lock (&optional beginning end)
+  )
 
 (defun stripe-org-table-jit-lock (&optional beginning end)
   "Originally made for org-mode tables, but can be used on any
@@ -149,17 +181,26 @@ ex. while viewing the output from MySql select."
   nil nil nil
   (if stripe-buffer-mode
       (progn
-        (add-hook 'post-command-hook 'stripe-buffer-jit-lock nil t)
-        (add-hook 'window-scroll-functions 'stripe-buffer-jit-lock nil t)
+        (add-hook 'post-command-hook 'stripe-redraw-all-windows nil t)
+        (add-hook 'window-scroll-functions 'stripe-redraw-window nil t)
         (add-hook 'change-major-mode-hook 'stripe-buffer-clear-stripes nil t)
-        (add-hook 'window-configuration-change-hook 'stripe-buffer-jit-lock nil t)
-        (stripe-buffer-jit-lock))
+        (add-hook 'window-configuration-change-hook 'stripe-redraw-all-windows nil t)
+        (stripe-redraw-all-windows))
       (progn
-        (remove-hook 'post-command-hook 'stripe-buffer-jit-lock t)
-        (remove-hook 'window-scroll-functions 'stripe-buffer-jit-lock t)
+        (remove-hook 'post-command-hook 'stripe-redraw-all-windows t)
+        (remove-hook 'window-scroll-functions 'stripe-redraw-window t)
         (remove-hook 'change-major-mode-hook 'stripe-buffer-clear-stripes t)
-        (remove-hook 'window-configuration-change-hook 'stripe-buffer-jit-lock t)
+        (remove-hook 'window-configuration-change-hook 'stripe-redraw-all-windows t)
         (stripe-buffer-clear-stripes)
+        )))
+
+(define-minor-mode stripe-table-mode
+    "Stripe table mode"
+  nil nil nil
+  (if stripe-table-mode
+      (progn
+        )
+      (progn
         )))
 
 (defun stripe-org-tables-enable ()
@@ -207,7 +248,6 @@ ex. while viewing the output from MySql select."
 (provide 'stripe-buffer)
 ;; Local Variables:
 ;; indent-tabs-mode: nil
-;; lisp-indent-function: common-lisp-indent-function
 ;; lisp-backquote-indentation: t
 ;; End:
 ;;; stripe-buffer.el ends here
