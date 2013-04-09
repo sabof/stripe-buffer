@@ -148,19 +148,11 @@
 
 (defun sb/table-ranges ()
   (let (ranges
-        ( in-table-regex "^[ \t]*\\([|+].+[|+]\\) *$")
-        range-beginning)
+        ( in-table-regex "^[ \t]*\\([|+].+[|+]\\) *$"))
     (save-excursion
       (goto-char (point-min))
       (while (search-forward-regexp in-table-regex nil t)
-        (setq range-beginning (match-beginning 0))
-        (while (and (zerop (forward-line))
-                    (string-match-p
-                     in-table-regex
-                     (buffer-substring
-                      (line-beginning-position)
-                      (line-end-position)))))
-        (push (cons range-beginning (point)) ranges)
+        (push (cons (match-beginning 0) (match-end 0)) ranges)
         ))
     ranges))
 
