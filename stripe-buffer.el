@@ -177,11 +177,9 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
     ))
 
 (defun sb/redraw-all-windows (&rest ignore)
-  (let (( regions (sb/buffer-visible-regions-compressed))
-        ( old-overlays stripe-highlight-overlays))
-    (setq stripe-highlight-overlays nil)
-    (sb/redraw-regions regions old-overlays)
-    ))
+  (sb/redraw-regions (sb/buffer-visible-regions-compressed)
+                     (prog1 stripe-highlight-overlays
+                       (setq stripe-highlight-overlays nil))))
 
 (defun sb/visible-table-ranges ()
   (let (( visible-ranges (sb/buffer-visible-regions-compressed))
@@ -195,8 +193,9 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
     (sb/compress-ranges ranges)))
 
 (defun sb/redraw-all-tables (&rest ignore)
-  (sb/clear-stripes)
-  (sb/redraw-regions (sb/visible-table-ranges) nil))
+  (sb/redraw-regions (sb/visible-table-ranges)
+                     (prog1 stripe-highlight-overlays
+                       (setq stripe-highlight-overlays nil))))
 
 ;;; Interface
 
