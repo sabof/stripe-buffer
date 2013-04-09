@@ -75,7 +75,7 @@
   (mapc 'delete-overlay stripe-highlight-overlays)
   (setq stripe-highlight-overlays nil))
 
-(defun stripe-redraw-region (regions available)
+(defun sb/redraw-regions (regions available)
   (let* (( interval
            (* 2 stripe-height))
          ( get-overlay-create
@@ -136,18 +136,47 @@
             (cl-set-difference
              stripe-highlight-overlays
              old-overlays))
-      (stripe-redraw-region (list region) old-overlays)
+      (sb/redraw-regions (list region) old-overlays)
       )))
 
 (defun stripe-redraw-all-windows (&rest ignore)
   (let (( regions (es-buffer-visible-regions-merged))
         ( old-overlays stripe-highlight-overlays))
     (setq stripe-highlight-overlays nil)
-    (stripe-redraw-region regions old-overlays)
+    (sb/redraw-regions regions old-overlays)
     ))
 
-(defun* stripe-buffer-jit-lock (&optional beginning end)
-  )
+(defun sb/table-ranges ()
+  (let (ranges
+        ( in-table-regex "^[ \t]*\\([|+].+[|+]\\) *$")
+        range-beginning)
+    (save-excursion
+      (goto-char (point-min))
+      (while (search-forward-regexp in-table-regex nil t)
+        (setq range-beginning (match-beginning 0))
+        (while (and (zerop (forward-line))
+                    (string-match-p
+                     in-table-regex
+                     (buffer-substring
+                      (line-beginning-position)
+                      (line-end-position)))))
+        (push (cons range-beginning (point)) ranges)
+        ))
+    ranges))
+
+(defun sb/visible-table-ranges ()
+  (let (( table-ranges (sb/table-ranges))
+        ( visible-ranges (es-buffer-visible-regions-merged))
+        ( and-ranges ))
+    (cl-dolist (tr table-ranges)
+      (cl-dolist (vr visible-ranges)
+        (push (es-ranges-intersection tr vr)
+              and-ranges)))
+    (es-compress-ranges (remove nil and-ranges))))
+
+(defun sb/redraw-all-tables (&rest ignore)
+  (stripe-buffer-clear-stripes)
+  (sb/redraw-regions (sb/visible-table-ranges) nil))
 
 (defun stripe-org-table-jit-lock (&optional beginning end)
   "Originally made for org-mode tables, but can be used on any
@@ -199,8 +228,17 @@ ex. while viewing the output from MySql select."
   nil nil nil
   (if stripe-table-mode
       (progn
-        )
+        (add-hook 'post-command-hook 'sb/redraw-all-tables nil t)
+        (add-hook 'window-scroll-functions 'sb/redraw-all-tables nil t)
+        (add-hook 'change-major-mode-hook 'stripe-buffer-clear-stripes nil t)
+        (add-hook 'window-configuration-change-hook 'sb/redraw-all-tables nil t)
+        (sb/redraw-all-tables))
       (progn
+        (remove-hook 'post-command-hook 'sb/redraw-all-tables t)
+        (remove-hook 'window-scroll-functions 'sb/redraw-all-tables t)
+        (remove-hook 'change-major-mode-hook 'stripe-buffer-clear-stripes t)
+        (remove-hook 'window-configuration-change-hook 'sb/redraw-all-tables t)
+        (stripe-buffer-clear-stripes)
         )))
 
 (defun stripe-org-tables-enable ()
