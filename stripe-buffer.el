@@ -1,12 +1,20 @@
 ;;; stripe-buffer.el --- Use a different background for even and odd lines
-;;; Version: 0.1
-;;; Author: sabof
-;;; URL: https://github.com/sabof/stripe-buffer
+
+;; Copyright (C) 2008-2009  Andy Stewart
+;; Copyright (C) 2012-2013  sabof
+
+;; Author: Andy Stewart <lazycat.manatee@gmail.com>
+;; Maintainer: sabof
+;; URL: https://github.com/sabof/stripe-buffer
+;; Version: 0.1
 
 ;;; Commentary:
 
+;; Use different background colors for even and odd lines.  With the
+;; help of library `hl-line' yet another color can be used for the
+;; current line.
+
 ;; The project is hosted at https://github.com/sabof/stripe-buffer
-;; The latest version, and all the relevant information can be found there.
 
 ;;; License:
 
@@ -29,24 +37,23 @@
 
 ;;; Code:
 
-(require 'cl)
-
 (defgroup stripe-buffer nil
   "Use different background for even and odd lines."
   :group 'wp)
 
 (defface stripe-highlight
-    '((((class color) (background dark))
-       (:background "#444444"))
-      (((class color) (background light))
-       (:background "#CCCCCC")))
-  "Face for stripes.")
+  '((((class color) (background dark))
+     (:background "#444444"))
+    (((class color) (background light))
+     (:background "#CCCCCC")))
+  "Face for stripes."
+  :group 'stripe-buffer)
 
 (defcustom stripe-max-buffer-size 0
   "Don't add stripes if buffer has more characters than this.
-This is useful, since a large number of overlays can make editing slow.
-Suggested value: 50000
-Set to 0 or nil, if you want stripes no matter the size."
+This is useful, since a large number of overlays can make editing
+slow.  When the value is 0 stripes are added regardless of the
+number of characters.  50000 is probably a good value."
   :group 'stripe-buffer
   :type 'integer)
 
@@ -64,26 +71,25 @@ Set to 0 or nil, if you want stripes no matter the size."
   (mapc 'delete-overlay stripe-highlight-overlays)
   (setq stripe-highlight-overlays nil))
 
-(defun* stripe-buffer-jit-lock (&optional beginning end)
+(defun stripe-buffer-jit-lock (&optional beginning end)
   (stripe-buffer-clear-stripes)
-  (when (and (numberp stripe-max-buffer-size)
-             (not (zerop stripe-max-buffer-size))
-             (> (point-max) stripe-max-buffer-size))
-    (return-from stripe-buffer-jit-lock))
-  (save-excursion
-    (goto-char (point-min))
-    (forward-line stripe-height)
-    (while (not (eobp))
-      (let ((overlay (make-overlay
-                      (line-beginning-position)
-                      (min (1+ (progn
-                                 (forward-line
-                                  (1- stripe-height))
-                                 (line-end-position)))
-                           (point-max)))))
-        (overlay-put overlay 'face stripe-highlight-face)
-        (push overlay stripe-highlight-overlays)
-        (forward-line (1+ stripe-height))))))
+  (unless (and (numberp stripe-max-buffer-size)
+               (not (zerop stripe-max-buffer-size))
+               (> (point-max) stripe-max-buffer-size))
+    (save-excursion
+      (goto-char (point-min))
+      (forward-line stripe-height)
+      (while (not (eobp))
+        (let ((overlay (make-overlay
+                        (line-beginning-position)
+                        (min (1+ (progn
+                                   (forward-line
+                                    (1- stripe-height))
+                                   (line-end-position)))
+                             (point-max)))))
+          (overlay-put overlay 'face stripe-highlight-face)
+          (push overlay stripe-highlight-overlays)
+          (forward-line (1+ stripe-height)))))))
 
 (defun stripe-org-table-jit-lock (&optional beginning end)
   "Originally made for org-mode tables, but can be used on any
@@ -113,34 +119,41 @@ ex. while viewing the output from MySql select."
 ;;; Interface
 
 (define-minor-mode stripe-buffer-mode
-    "Stripe buffer mode"
+  "Stripe buffer mode"
   nil nil nil
-  (if stripe-buffer-mode
-      (progn
-        (jit-lock-register 'stripe-buffer-jit-lock)
-        (stripe-buffer-jit-lock))
-      (progn
-        (jit-lock-unregister 'stripe-buffer-jit-lock)
-        (stripe-buffer-clear-stripes)
-        )))
+  (cond (stripe-buffer-mode
+         (jit-lock-register 'stripe-buffer-jit-lock)
+         (stripe-buffer-jit-lock))
+        (t
+         (jit-lock-unregister 'stripe-buffer-jit-lock)
+         (stripe-buffer-clear-stripes))))
 
 (defun stripe-org-tables-enable ()
   "Add stripes to tables in org mode."
+  (interactive)
   (jit-lock-register 'stripe-org-table-jit-lock))
 
 (defalias 'org-table-stripes-enable 'stripe-org-tables-enable
   "Backward compatibility")
 
+(defun turn-on-stripe-buffer-mode ()
+  "Turn on `stripe-buffer-mode'."
+  (interactive)
+  (hl-line-mode 1))
+
 (defun stripe-listify-buffer ()
-  ;; (require 'hl-line)
-  (if (featurep 'hl-line+)
-      (progn
-        (require 'hl-line+)
-        (stripe-buffer-mode 1)
-        (setq cursor-type nil)
-        (hl-line-mode 1))
-      (hl-line-mode 1)))
+  "Turn on `stripe-buffer-mode' and `hl-line-mode'."
+  (interactive)
+  (stripe-buffer-mode 1)
+  (hl-line-mode 1))
+
+(eval-after-load 'hl-line
+  '(unless (require 'hl-line+ nil t)
+     (defadvice hl-line-highlight (after set-priority activate)
+       (overlay-put hl-line-overlay 'priority 10))))
 
 (provide 'stripe-buffer)
-
+;; Local Variables:
+;; indent-tabs-mode: nil
+;; End:
 ;;; stripe-buffer.el ends here

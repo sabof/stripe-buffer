@@ -1,17 +1,29 @@
 # stripe-buffer mode
-Use different background for even and odd lines
 
-Based on stripe-buffer.el by Andy Steward
+Use different background colors for even and odd lines.
+
+With the help of library `hl-line-mode` yet another color can be used
+for the current line.
 
 ![screenshot](https://github.com/sabof/stripe-buffer/raw/master/screenshot.png)
+
+Based on the [original](http://www.emacswiki.org/emacs/StripeBuffer)
+`stripe-buffer.el` by Andy Steward.
 
 ## Usage:
 
 ### Add stripes in dired mode
-If you have hl-line+ installed, it will also change the cursor to a highlighted line. You can get hl-line+ [here](http://www.emacswiki.org/emacs-en/download/hl-line%2b.el), or from melpa
+
+To use different background colors for even and odd lines use:
+
+    (add-hook 'dired-mode-hook 'turn-on-stripe-buffer-mode)
+
+If you also want to use yet another color for the current line use:
 
     (add-hook 'dired-mode-hook 'stripe-listify-buffer)
 
 ### Adds stripes to tables in org-mode
 
-    (add-hook 'org-mode-hook 'org-table-stripes-enable)
+In Org-mode you likely want to add stripes only to tables:
+
+    (add-hook 'org-mode-hook 'stripes-org-table-enable)
