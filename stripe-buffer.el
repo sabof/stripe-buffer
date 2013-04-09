@@ -56,14 +56,6 @@
   "Bold face for highlighting the current line in Hl-Line mode."
   :group 'stripe-buffer)
 
-(defcustom stripe-max-buffer-size 0
-  "Don't add stripes if buffer has more characters than this.
-This is useful, since a large number of overlays can make editing
-slow.  When the value is 0 stripes are added regardless of the
-number of characters.  50000 is probably a good value."
-  :group 'stripe-buffer
-  :type 'integer)
-
 (defcustom stripe-height 1
   "Height of stripes."
   :group 'stripe-buffer
@@ -72,7 +64,6 @@ number of characters.  50000 is probably a good value."
 (defvar stripe-highlight-face 'stripe-highlight)
 (defvar stripe-highlight-overlays nil)
 (make-variable-buffer-local 'stripe-highlight-overlays)
-
 (defvar stripe-buffer-listified nil)
 (make-variable-buffer-local 'stripe-buffer-listified)
 
@@ -81,63 +72,50 @@ number of characters.  50000 is probably a good value."
   (mapc 'delete-overlay stripe-highlight-overlays)
   (setq stripe-highlight-overlays nil))
 
-(defun stripe-buffer-jit-lock (&optional beginning end)
-  (stripe-buffer-clear-stripes)
-  (unless (and (numberp stripe-max-buffer-size)
-               (not (zerop stripe-max-buffer-size))
-               (> (point-max) stripe-max-buffer-size))
-    (save-excursion
-      (goto-char (point-min))
-      (forward-line stripe-height)
-      (while (not (eobp))
-        (let ((overlay (make-overlay
-                        (line-beginning-position)
-                        (min (1+ (progn
-                                   (forward-line
-                                    (1- stripe-height))
-                                   (line-end-position)))
-                             (point-max)))))
-          (overlay-put overlay 'face stripe-highlight-face)
-          (overlay-put overlay 'is-stripe t)
-          (push overlay stripe-highlight-overlays)
-          (forward-line (1+ stripe-height)))))))
-
 (defun* stripe-buffer-jit-lock (&optional beginning end)
-  (stripe-buffer-clear-stripes)
-  (condition-case error
-      (let* (( interval
-               (* 2 stripe-height))
-             ( get-overlay
-               (lambda ()))
-             ( draw-stripe
-               (lambda (height)
-                 (let (( overlay
-                         (make-overlay
-                          (point)
-                          (progn
-                            (forward-line height)
-                            (point)))))
-                   (overlay-put overlay 'face stripe-highlight-face)
-                   (overlay-put overlay 'is-stripe t)
-                   (push overlay stripe-highlight-overlays))))
-             ( goto-start-pos
-               (lambda ()
-                 (let (( start-offset (mod (line-number-at-pos) interval)))
-                   (if (< start-offset stripe-height) ; in first part
-                       (progn
-                         (forward-line (- stripe-height start-offset))
-                         (funcall draw-stripe stripe-height))
-                       (funcall draw-stripe (- interval start-offset))
-                       )))))
-        (save-excursion
-          (cl-dolist (region (es-buffer-visible-regions-merged))
-            (goto-char (car region))
-            (funcall goto-start-pos)
-            (while (< (point) (cdr region))
-              (forward-line stripe-height)
-              (funcall draw-stripe stripe-height)
-              ))))
-    (error (debug error))))
+  (let* (( interval
+           (* 2 stripe-height))
+         ( old-overlays
+           (prog1 stripe-highlight-overlays
+             (setq stripe-highlight-overlays nil)))
+         ( get-overlay-create
+           (lambda (start end)
+             (let ((old-overlay (pop old-overlays)))
+               (if old-overlay
+                   (progn
+                     (move-overlay old-overlay start end)
+                     old-overlay)
+                   (make-overlay start end)))))
+         ( draw-stripe
+           (lambda (height)
+             (let (( overlay
+                     (funcall
+                      get-overlay-create
+                      (point)
+                      (progn
+                        (forward-line height)
+                        (point)))))
+               (overlay-put overlay 'face stripe-highlight-face)
+               (overlay-put overlay 'is-stripe t)
+               (push overlay stripe-highlight-overlays))))
+         ( goto-start-pos
+           (lambda ()
+             (let (( start-offset (mod (line-number-at-pos) interval)))
+               (if (< start-offset stripe-height) ; in first part
+                   (progn
+                     (forward-line (- stripe-height start-offset))
+                     (funcall draw-stripe stripe-height))
+                   (funcall draw-stripe (- interval start-offset))
+                   )))))
+    (save-excursion
+      (cl-dolist (region (es-buffer-visible-regions-merged))
+        (goto-char (car region))
+        (funcall goto-start-pos)
+        (while (< (point) (cdr region))
+          (forward-line stripe-height)
+          (funcall draw-stripe stripe-height)
+          ))
+      (mapc 'delete-overlay old-overlays))))
 
 (defun stripe-org-table-jit-lock (&optional beginning end)
   "Originally made for org-mode tables, but can be used on any
