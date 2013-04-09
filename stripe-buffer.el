@@ -168,7 +168,7 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
              (cons (window-start)
                    (window-end nil t)))
            ( old-overlays
-             (remove-if-not
+             (cl-remove-if-not
               (lambda (ov) (overlay-get ov 'is-stripe))
               (overlays-in (car region) (cdr region)))))
       (setq stripe-highlight-overlays
