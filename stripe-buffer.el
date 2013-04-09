@@ -170,9 +170,8 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
             (lambda (ov) (overlay-get ov 'is-stripe))
             (overlays-in (car region) (cdr region)))))
     (setq stripe-highlight-overlays
-          (cl-set-difference
-           stripe-highlight-overlays
-           old-overlays))
+          (cl-set-difference stripe-highlight-overlays
+                             old-overlays))
     (sb/redraw-regions (list region) old-overlays)
     ))
 
@@ -259,24 +258,18 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
               `((hl-line stripe-hl-line)))
   (hl-line-mode 1))
 
-(eval-after-load 'hl-line
-  `(progn
-
-     (defadvice hl-line-highlight (after stripe-set-priority activate)
-       (when stripe-buffer-mode
-         (overlay-put hl-line-overlay 'priority 10)))
-
-     ))
+(defadvice hl-line-highlight (after stripe-set-priority activate)
+  (when stripe-buffer-mode
+    (overlay-put hl-line-overlay 'priority 10)))
 
 (defun stripe-wdired-enable-cursor ()
-  (when (and stripe-buffer-mode stripe-buffer-listified)
+  (when stripe-buffer-listified
     (setq cursor-type t)))
 
 (add-hook 'wdired-mode-hook 'stripe-wdired-enable-cursor)
 
-(defadvice wdired-finish-edit
-    (before stripe-hide-cursor activate)
-  (when (and stripe-buffer-mode stripe-buffer-listified)
+(defadvice wdired-finish-edit (before stripe-hide-cursor activate)
+  (when stripe-buffer-listified
     (setq cursor-type nil)))
 
 (provide 'stripe-buffer)
