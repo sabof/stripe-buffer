@@ -4,7 +4,7 @@
 ;; Copyright (C) 2012-2013  sabof
 
 ;; Author: Andy Stewart <lazycat.manatee@gmail.com>
-;; Maintainer: sabof
+;; Maintainer: sabof <esabof@gmail.com>
 ;; URL: https://github.com/sabof/stripe-buffer
 ;; Version: 0.1
 
@@ -119,14 +119,16 @@ ex. while viewing the output from MySql select."
 ;;; Interface
 
 (define-minor-mode stripe-buffer-mode
-  "Stripe buffer mode"
+    "Stripe buffer mode"
   nil nil nil
-  (cond (stripe-buffer-mode
-         (jit-lock-register 'stripe-buffer-jit-lock)
-         (stripe-buffer-jit-lock))
-        (t
-         (jit-lock-unregister 'stripe-buffer-jit-lock)
-         (stripe-buffer-clear-stripes))))
+  (if stripe-buffer-mode
+      (progn
+        (jit-lock-register 'stripe-buffer-jit-lock)
+        (stripe-buffer-jit-lock))
+      (progn
+        (jit-lock-unregister 'stripe-buffer-jit-lock)
+        (stripe-buffer-clear-stripes)
+        )))
 
 (defun stripe-org-tables-enable ()
   "Add stripes to tables in org mode."
@@ -148,12 +150,18 @@ ex. while viewing the output from MySql select."
   (hl-line-mode 1))
 
 (eval-after-load 'hl-line
-  '(unless (require 'hl-line+ nil t)
-     (defadvice hl-line-highlight (after set-priority activate)
-       (overlay-put hl-line-overlay 'priority 10))))
+  `(progn
+
+     (defadvice hl-line-highlight (after stripe-set-priority activate)
+       (when stripe-buffer-mode
+         (overlay-put hl-line-overlay 'priority 10)))
+
+     ))
 
 (provide 'stripe-buffer)
 ;; Local Variables:
 ;; indent-tabs-mode: nil
+;; lisp-indent-function: common-lisp-indent-function
+;; lisp-backquote-indentation: t
 ;; End:
 ;;; stripe-buffer.el ends here
