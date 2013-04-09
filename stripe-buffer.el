@@ -74,8 +74,10 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
 (defvar stripe-highlight-face 'stripe-highlight)
 (defvar stripe-highlight-overlays nil)
 (defvar stripe-buffer-listified nil)
+(defvar stripe-buffer-modified-flag nil)
 (mapc 'make-variable-buffer-local
       '(stripe-buffer-listified
+        stripe-buffer-modified-flag
         stripe-highlight-overlays))
 
 (defun sb/window-limits (&optional window)
@@ -201,20 +203,31 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
 (define-minor-mode stripe-buffer-mode
     "Stripe buffer mode"
   nil nil nil
-  (if stripe-buffer-mode
-      (progn
-        (add-hook 'post-command-hook 'sb/redraw-all-windows nil t)
-        (add-hook 'window-scroll-functions 'sb/redraw-window nil t)
-        (add-hook 'change-major-mode-hook 'sb/clear-stripes nil t)
-        (add-hook 'window-configuration-change-hook 'sb/redraw-all-windows nil t)
-        (sb/redraw-all-windows))
-      (progn
-        (remove-hook 'post-command-hook 'sb/redraw-all-windows t)
-        (remove-hook 'window-scroll-functions 'sb/redraw-window t)
-        (remove-hook 'change-major-mode-hook 'sb/clear-stripes t)
-        (remove-hook 'window-configuration-change-hook 'sb/redraw-all-windows t)
-        (sb/clear-stripes)
-        )))
+  (let (( after-change
+          (lambda (&rest ignore)
+            (setq stripe-buffer-modified-flag t)))
+        ( post-command
+          (lambda (&rest ignore)
+            (when stripe-buffer-modified-flag
+              (sb/redraw-all-windows)
+              (setq stripe-buffer-modified-flag nil)))))
+    (if stripe-buffer-mode
+        (progn
+          (stripe-table-mode -1)
+          (add-hook 'after-change-functions after-change nil t)
+          (add-hook 'post-command-hook post-command nil t)
+          (add-hook 'window-scroll-functions 'sb/redraw-window nil t)
+          (add-hook 'change-major-mode-hook 'sb/clear-stripes nil t)
+          (add-hook 'window-configuration-change-hook 'sb/redraw-all-windows nil t)
+          (sb/redraw-all-windows))
+        (progn
+          (remove-hook 'after-change-functions after-change t)
+          (remove-hook 'post-command-hook post-command t)
+          (remove-hook 'window-scroll-functions 'sb/redraw-window t)
+          (remove-hook 'change-major-mode-hook 'sb/clear-stripes t)
+          (remove-hook 'window-configuration-change-hook 'sb/redraw-all-windows t)
+          (sb/clear-stripes)
+          ))))
 
 (defun turn-on-stripe-buffer-mode ()
   "Turn on `stripe-buffer-mode'."
@@ -224,20 +237,31 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
 (define-minor-mode stripe-table-mode
     "Stripe table mode"
   nil nil nil
-  (if stripe-table-mode
-      (progn
-        (add-hook 'post-command-hook 'sb/redraw-all-tables nil t)
-        (add-hook 'window-scroll-functions 'sb/redraw-all-tables nil t)
-        (add-hook 'change-major-mode-hook 'sb/clear-stripes nil t)
-        (add-hook 'window-configuration-change-hook 'sb/redraw-all-tables nil t)
-        (sb/redraw-all-tables))
-      (progn
-        (remove-hook 'post-command-hook 'sb/redraw-all-tables t)
-        (remove-hook 'window-scroll-functions 'sb/redraw-all-tables t)
-        (remove-hook 'change-major-mode-hook 'sb/clear-stripes t)
-        (remove-hook 'window-configuration-change-hook 'sb/redraw-all-tables t)
-        (sb/clear-stripes)
-        )))
+  (let (( after-change
+          (lambda (&rest ignore)
+            (setq stripe-buffer-modified-flag t)))
+        ( post-command
+          (lambda (&rest ignore)
+            (when stripe-buffer-modified-flag
+              (sb/redraw-all-tables)
+              (setq stripe-buffer-modified-flag nil)))))
+    (if stripe-table-mode
+        (progn
+          (stripe-buffer-mode -1)
+          (add-hook 'after-change-functions after-change nil t)
+          (add-hook 'post-command-hook post-command nil t)
+          (add-hook 'window-scroll-functions 'sb/redraw-all-tables nil t)
+          (add-hook 'change-major-mode-hook 'sb/clear-stripes nil t)
+          (add-hook 'window-configuration-change-hook 'sb/redraw-all-tables nil t)
+          (sb/redraw-all-tables))
+        (progn
+          (remove-hook 'after-change-functions after-change t)
+          (remove-hook 'post-command-hook post-command t)
+          (remove-hook 'window-scroll-functions 'sb/redraw-all-tables t)
+          (remove-hook 'change-major-mode-hook 'sb/clear-stripes t)
+          (remove-hook 'window-configuration-change-hook 'sb/redraw-all-tables t)
+          (sb/clear-stripes)
+          ))))
 
 (defun turn-on-stripe-table-mode ()
   "Turn on `stripe-table-mode'."
