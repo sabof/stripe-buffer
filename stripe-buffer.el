@@ -64,6 +64,13 @@
   :group 'stripe-buffer
   :type 'integer)
 
+(defcustom stripe-in-table-regex
+  "^[ \t]*\\(?1:[|+].+[|+]\\) *$"
+  "Regular expression that determines whether a line contains a table row.
+Used by `stripe-table-mode' Only the first matching group will be painted."
+  :group 'stripe-buffer
+  :type 'string)
+
 (defvar stripe-highlight-face 'stripe-highlight)
 (defvar stripe-highlight-overlays nil)
 (defvar stripe-buffer-listified nil)
@@ -179,11 +186,10 @@
     ))
 
 (defun sb/table-ranges ()
-  (let (ranges
-        ( in-table-regex "^[ \t]*\\(?1:[|+].+[|+]\\) *$"))
+  (let (ranges)
     (save-excursion
       (goto-char (point-min))
-      (while (search-forward-regexp in-table-regex nil t)
+      (while (search-forward-regexp stripe-in-table-regex nil t)
         (push (cons (match-beginning 1) (match-end 1)) ranges)
         ))
     ranges))
