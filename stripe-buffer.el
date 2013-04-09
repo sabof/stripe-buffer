@@ -6,6 +6,7 @@
 ;; Author: Andy Stewart <lazycat.manatee@gmail.com>
 ;; Maintainer: sabof <esabof@gmail.com>
 ;; URL: https://github.com/sabof/stripe-buffer
+;; Package-Requires: ((cl-lib "1.0"))
 ;; Version: 0.1
 
 ;;; Commentary:
@@ -36,6 +37,8 @@
 ;; Boston, MA 02111-1307, USA.
 
 ;;; Code:
+
+(require 'cl-lib)
 
 (defgroup stripe-buffer nil
   "Use different background for even and odd lines."
@@ -118,19 +121,18 @@
                    (make-overlay start end)))))
          ( draw-stripe
            (lambda (height)
-             ;; region available through dynamic binding
+             ;; `region' available through dynamic binding
              (when (< (point) (cdr region))
-               (let (( overlay
-                       (funcall
-                        get-overlay-create
-                        (point)
-                        (progn
-                          (forward-line height)
-                          (if (<= (point) (cdr region))
-                              (point)
+               (let* (( stripe-region
+                        (list (point)
                               (progn
-                                (goto-char (cdr region))
-                                (point)))))))
+                                (forward-line height)
+                                (if (<= (point) (cdr region))
+                                    (point)
+                                    (progn
+                                      (goto-char (cdr region))
+                                      (point))))))
+                      ( overlay (apply get-overlay-create stripe-region)))
                  (overlay-put overlay 'face stripe-highlight-face)
                  (overlay-put overlay 'is-stripe t)
                  (push overlay stripe-highlight-overlays)))))
@@ -238,8 +240,8 @@
         (sb/clear-stripes)
         )))
 
-(defun org-table-stripes-enable
-    "Backward compatibility"
+(defun org-table-stripes-enable ()
+  "Backward compatibility"
   (interactive)
   (stripe-table-mode 1))
 
