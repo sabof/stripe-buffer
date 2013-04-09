@@ -228,6 +228,11 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
         (sb/clear-stripes)
         )))
 
+(defun turn-on-stripe-buffer-mode ()
+  "Turn on `stripe-buffer-mode'."
+  (interactive)
+  (stripe-buffer-mode 1))
+
 (define-minor-mode stripe-table-mode
     "Stripe table mode"
   nil nil nil
@@ -246,15 +251,15 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
         (sb/clear-stripes)
         )))
 
+(defun turn-on-stripe-table-mode ()
+  "Turn on `stripe-table-mode'."
+  (interactive)
+  (stripe-table-mode 1))
+
 (defun org-table-stripes-enable ()
   "Backward compatibility"
   (interactive)
   (stripe-table-mode 1))
-
-(defun turn-on-stripe-buffer-mode ()
-  "Turn on `stripe-buffer-mode'."
-  (interactive)
-  (hl-line-mode 1))
 
 (defun stripe-listify-buffer ()
   "Turn on `stripe-buffer-mode' and `hl-line-mode'."
