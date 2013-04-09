@@ -84,10 +84,17 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
     (when (< (car r3) (cdr r3))
       r3)))
 
+(defun sb/window-limits (&optional window)
+  (save-excursion
+    (let (( win-start (window-start window)))
+      (goto-char (window-end window t))
+      (unless (= (line-beginning-position) (point))
+        (forward-line 1))
+      (cons win-start (point)))))
+
 (cl-defun sb/buffer-visible-regions (&optional (buffer-or-name (current-buffer)))
   (let (( windows (get-buffer-window-list buffer-or-name nil 'visible)))
-    (mapcar (lambda (window) (cons (window-start window) (window-end window t)))
-            windows)))
+    (mapcar 'sb/window-limits windows)))
 
 (defun sb/compress-ranges (ranges)
   (let* (( dirty (cl-sort (cl-copy-list ranges)
@@ -163,20 +170,17 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
       (mapc 'delete-overlay available))))
 
 (cl-defun sb/redraw-window (&optional (window (selected-window)) &rest ignore)
-  (with-selected-window window
-    (let* (( region
-             (cons (window-start)
-                   (window-end nil t)))
-           ( old-overlays
-             (cl-remove-if-not
-              (lambda (ov) (overlay-get ov 'is-stripe))
-              (overlays-in (car region) (cdr region)))))
-      (setq stripe-highlight-overlays
-            (cl-set-difference
-             stripe-highlight-overlays
-             old-overlays))
-      (sb/redraw-regions (list region) old-overlays)
-      )))
+  (let* (( region (sb/window-limits window))
+         ( old-overlays
+           (cl-remove-if-not
+            (lambda (ov) (overlay-get ov 'is-stripe))
+            (overlays-in (car region) (cdr region)))))
+    (setq stripe-highlight-overlays
+          (cl-set-difference
+           stripe-highlight-overlays
+           old-overlays))
+    (sb/redraw-regions (list region) old-overlays)
+    ))
 
 (defun sb/redraw-all-windows (&rest ignore)
   (let (( regions (sb/buffer-visible-regions-compressed))
