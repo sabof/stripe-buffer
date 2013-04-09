@@ -42,11 +42,18 @@
   :group 'wp)
 
 (defface stripe-highlight
-  '((((class color) (background dark))
-     (:background "#444444"))
-    (((class color) (background light))
-     (:background "#CCCCCC")))
+    '((((class color) (background dark))
+       (:background "#444444"))
+      (((class color) (background light))
+       (:background "#CCCCCC")))
   "Face for stripes."
+  :group 'stripe-buffer)
+
+(defface stripe-hl-line
+    `((t
+       :background ,(face-attribute 'default :foreground)
+       :foreground ,(face-attribute 'default :background)))
+  "Bold face for highlighting the current line in Hl-Line mode."
   :group 'stripe-buffer)
 
 (defcustom stripe-max-buffer-size 0
@@ -151,6 +158,8 @@ ex. while viewing the output from MySql select."
   (interactive)
   (setq cursor-type t)
   (stripe-buffer-mode 1)
+  (setq-local face-remapping-alist
+              `((hl-line stripe-hl-line)))
   (hl-line-mode 1))
 
 (eval-after-load 'hl-line
