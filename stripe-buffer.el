@@ -72,13 +72,13 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
   :type 'string)
 
 (defvar stripe-highlight-face 'stripe-highlight)
-(defvar stripe-highlight-overlays nil)
+(defvar sb/overlays nil)
 (defvar stripe-buffer-listified nil)
 (defvar stripe-buffer-modified-flag nil)
 (mapc 'make-variable-buffer-local
       '(stripe-buffer-listified
         stripe-buffer-modified-flag
-        stripe-highlight-overlays))
+        sb/overlays))
 
 (defun sb/window-limits (&optional window)
   (save-excursion
@@ -115,8 +115,8 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
 
 (defun sb/clear-stripes (&rest ignore)
   "Clear stripe overlays in current buffer."
-  (mapc 'delete-overlay stripe-highlight-overlays)
-  (setq stripe-highlight-overlays nil))
+  (mapc 'delete-overlay sb/overlays)
+  (setq sb/overlays nil))
 
 (defun sb/redraw-regions (regions available)
   (let* (( interval
@@ -145,7 +145,7 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
                       ( overlay (apply get-overlay-create stripe-region)))
                  (overlay-put overlay 'face stripe-highlight-face)
                  (overlay-put overlay 'is-stripe t)
-                 (push overlay stripe-highlight-overlays)))))
+                 (push overlay sb/overlays)))))
          ( goto-start-pos
            (lambda ()
              (let (( start-offset (mod (line-number-at-pos) interval)))
@@ -171,16 +171,16 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
            (cl-remove-if-not
             (lambda (ov) (overlay-get ov 'is-stripe))
             (overlays-in (car region) (cdr region)))))
-    (setq stripe-highlight-overlays
-          (cl-set-difference stripe-highlight-overlays
+    (setq sb/overlays
+          (cl-set-difference sb/overlays
                              old-overlays))
     (sb/redraw-regions (list region) old-overlays)
     ))
 
 (defun sb/redraw-all-windows (&rest ignore)
   (sb/redraw-regions (sb/buffer-visible-regions-compressed)
-                     (prog1 stripe-highlight-overlays
-                       (setq stripe-highlight-overlays nil))))
+                     (prog1 sb/overlays
+                       (setq sb/overlays nil))))
 
 (defun sb/visible-table-ranges ()
   (let (( visible-ranges (sb/buffer-visible-regions-compressed))
@@ -195,8 +195,8 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
 
 (defun sb/redraw-all-tables (&rest ignore)
   (sb/redraw-regions (sb/visible-table-ranges)
-                     (prog1 stripe-highlight-overlays
-                       (setq stripe-highlight-overlays nil))))
+                     (prog1 sb/overlays
+                       (setq sb/overlays nil))))
 
 ;;; Interface
 
@@ -210,10 +210,16 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
           (lambda (&rest ignore)
             (when stripe-buffer-modified-flag
               (sb/redraw-all-windows)
-              (setq stripe-buffer-modified-flag nil)))))
+              (setq stripe-buffer-modified-flag nil))))
+        ( schedule-redraw
+          (lambda (&rest ignore)
+            (run-with-idle-timer 0 nil 'sb/redraw-all-windows))))
     (if stripe-buffer-mode
         (progn
           (stripe-table-mode -1)
+          (add-hook 'outline-view-change-hook schedule-redraw nil t)
+          (add-hook 'hs-hide-hook schedule-redraw nil t)
+          (add-hook 'hs-show-hook schedule-redraw nil t)
           (add-hook 'after-change-functions after-change nil t)
           (add-hook 'post-command-hook post-command nil t)
           (add-hook 'window-scroll-functions 'sb/redraw-window nil t)
@@ -221,6 +227,9 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
           (add-hook 'window-configuration-change-hook 'sb/redraw-all-windows nil t)
           (sb/redraw-all-windows))
         (progn
+          (remove-hook 'outline-view-change-hook schedule-redraw t)
+          (remove-hook 'hs-hide-hook schedule-redraw t)
+          (remove-hook 'hs-show-hook schedule-redraw t)
           (remove-hook 'after-change-functions after-change t)
           (remove-hook 'post-command-hook post-command t)
           (remove-hook 'window-scroll-functions 'sb/redraw-window t)
@@ -244,10 +253,16 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
           (lambda (&rest ignore)
             (when stripe-buffer-modified-flag
               (sb/redraw-all-tables)
-              (setq stripe-buffer-modified-flag nil)))))
+              (setq stripe-buffer-modified-flag nil))))
+        ( schedule-redraw
+          (lambda (&rest ignore)
+            (run-with-idle-timer 0 nil 'sb/redraw-all-tables))))
     (if stripe-table-mode
         (progn
           (stripe-buffer-mode -1)
+          (add-hook 'outline-view-change-hook schedule-redraw nil t)
+          (add-hook 'hs-hide-hook schedule-redraw nil t)
+          (add-hook 'hs-show-hook schedule-redraw nil t)
           (add-hook 'after-change-functions after-change nil t)
           (add-hook 'post-command-hook post-command nil t)
           (add-hook 'window-scroll-functions 'sb/redraw-all-tables nil t)
@@ -255,6 +270,9 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
           (add-hook 'window-configuration-change-hook 'sb/redraw-all-tables nil t)
           (sb/redraw-all-tables))
         (progn
+          (remove-hook 'outline-view-change-hook schedule-redraw t)
+          (remove-hook 'hs-hide-hook schedule-redraw t)
+          (remove-hook 'hs-show-hook schedule-redraw t)
           (remove-hook 'after-change-functions after-change t)
           (remove-hook 'post-command-hook post-command t)
           (remove-hook 'window-scroll-functions 'sb/redraw-all-tables t)
