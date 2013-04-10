@@ -216,16 +216,11 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
              (setq sb/modified-flag t)))
          ( post-command
            (lambda (&rest ignore)
-             (when sb/modified-flag
-               (sb/redraw-all-windows)
-               (setq sb/modified-flag nil))))
-         ( schedule-redraw
-           (lambda (&rest ignore)
-             (run-with-idle-timer 0 nil 'sb/redraw-all-windows)))
-         ( hooks `((outline-view-change-hook . ,schedule-redraw)
-                   (hs-hide-hook . ,schedule-redraw)
-                   (hs-show-hook . ,schedule-redraw)
-                   (after-change-functions . ,after-change)
+             (if sb/modified-flag
+                 (sb/redraw-all-windows)
+                 (run-with-idle-timer 0 nil 'sb/redraw-all-windows))
+             (setq sb/modified-flag nil)))
+         ( hooks `((after-change-functions . ,after-change)
                    (post-command-hook . ,post-command)
                    (window-scroll-functions . sb/redraw-window)
                    (change-major-mode-hook . sb/clear-stripes)
@@ -253,17 +248,12 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
              (setq sb/modified-flag t)))
          ( post-command
            (lambda (&rest ignore)
-             (when sb/modified-flag
-               (sb/redraw-all-tables)
-               (setq sb/modified-flag nil))))
-         ( schedule-redraw
-           (lambda (&rest ignore)
-             (run-with-idle-timer 0 nil 'sb/redraw-all-tables)))
+             (if sb/modified-flag
+                (sb/redraw-all-tables)
+                (run-with-idle-timer 0 nil 'sb/redraw-all-tables))
+             (setq sb/modified-flag nil)))
          ( hooks
-           `((outline-view-change-hook . ,schedule-redraw)
-             (hs-hide-hook . ,schedule-redraw)
-             (hs-show-hook . ,schedule-redraw)
-             (after-change-functions . ,after-change)
+           `((after-change-functions . ,after-change)
              (post-command-hook . ,post-command)
              (window-scroll-functions . sb/redraw-all-tables)
              (change-major-mode-hook . sb/clear-stripes)
