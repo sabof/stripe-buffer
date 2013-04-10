@@ -73,11 +73,11 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
 
 (defvar stripe-highlight-face 'stripe-highlight)
 (defvar sb/overlays nil)
-(defvar stripe-buffer-listified nil)
-(defvar stripe-buffer-modified-flag nil)
+(defvar sb/is-listified nil)
+(defvar sb/modified-flag nil)
 (mapc 'make-variable-buffer-local
-      '(stripe-buffer-listified
-        stripe-buffer-modified-flag
+      '(sb/is-listified
+        sb/modified-flag
         sb/overlays))
 
 (defun sb/window-limits (&optional window)
@@ -213,12 +213,12 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
   nil nil nil
   (let* (( after-change
            (lambda (&rest ignore)
-             (setq stripe-buffer-modified-flag t)))
+             (setq sb/modified-flag t)))
          ( post-command
            (lambda (&rest ignore)
-             (when stripe-buffer-modified-flag
+             (when sb/modified-flag
                (sb/redraw-all-windows)
-               (setq stripe-buffer-modified-flag nil))))
+               (setq sb/modified-flag nil))))
          ( schedule-redraw
            (lambda (&rest ignore)
              (run-with-idle-timer 0 nil 'sb/redraw-all-windows)))
@@ -250,12 +250,12 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
   nil nil nil
   (let* (( after-change
            (lambda (&rest ignore)
-             (setq stripe-buffer-modified-flag t)))
+             (setq sb/modified-flag t)))
          ( post-command
            (lambda (&rest ignore)
-             (when stripe-buffer-modified-flag
+             (when sb/modified-flag
                (sb/redraw-all-tables)
-               (setq stripe-buffer-modified-flag nil))))
+               (setq sb/modified-flag nil))))
          ( schedule-redraw
            (lambda (&rest ignore)
              (run-with-idle-timer 0 nil 'sb/redraw-all-tables)))
@@ -302,13 +302,13 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
     (overlay-put hl-line-overlay 'priority 10)))
 
 (defun stripe-wdired-enable-cursor ()
-  (when stripe-buffer-listified
+  (when sb/is-listified
     (setq cursor-type t)))
 
 (add-hook 'wdired-mode-hook 'stripe-wdired-enable-cursor)
 
 (defadvice wdired-finish-edit (before stripe-hide-cursor activate)
-  (when stripe-buffer-listified
+  (when sb/is-listified
     (setq cursor-type nil)))
 
 (provide 'stripe-buffer)
