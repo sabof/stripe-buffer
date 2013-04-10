@@ -198,43 +198,45 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
                      (prog1 sb/overlays
                        (setq sb/overlays nil))))
 
+(defun sb/add-hooks (hooks)
+  (cl-dolist (hook hooks)
+    (add-hook (car hook) (cdr hook) nil t)))
+
+(defun sb/remove-hooks (hooks)
+  (cl-dolist (hook hooks)
+    (remove-hook (car hook) (cdr hook) t)))
+
 ;;; Interface
 
 (define-minor-mode stripe-buffer-mode
     "Stripe buffer mode"
   nil nil nil
-  (let (( after-change
-          (lambda (&rest ignore)
-            (setq stripe-buffer-modified-flag t)))
-        ( post-command
-          (lambda (&rest ignore)
-            (when stripe-buffer-modified-flag
-              (sb/redraw-all-windows)
-              (setq stripe-buffer-modified-flag nil))))
-        ( schedule-redraw
-          (lambda (&rest ignore)
-            (run-with-idle-timer 0 nil 'sb/redraw-all-windows))))
+  (let* (( after-change
+           (lambda (&rest ignore)
+             (setq stripe-buffer-modified-flag t)))
+         ( post-command
+           (lambda (&rest ignore)
+             (when stripe-buffer-modified-flag
+               (sb/redraw-all-windows)
+               (setq stripe-buffer-modified-flag nil))))
+         ( schedule-redraw
+           (lambda (&rest ignore)
+             (run-with-idle-timer 0 nil 'sb/redraw-all-windows)))
+         ( hooks `((outline-view-change-hook . ,schedule-redraw)
+                   (hs-hide-hook . ,schedule-redraw)
+                   (hs-show-hook . ,schedule-redraw)
+                   (after-change-functions . ,after-change)
+                   (post-command-hook . ,post-command)
+                   (window-scroll-functions . sb/redraw-window)
+                   (change-major-mode-hook . sb/clear-stripes)
+                   (window-configuration-change-hook . sb/redraw-all-windows))))
     (if stripe-buffer-mode
         (progn
           (stripe-table-mode -1)
-          (add-hook 'outline-view-change-hook schedule-redraw nil t)
-          (add-hook 'hs-hide-hook schedule-redraw nil t)
-          (add-hook 'hs-show-hook schedule-redraw nil t)
-          (add-hook 'after-change-functions after-change nil t)
-          (add-hook 'post-command-hook post-command nil t)
-          (add-hook 'window-scroll-functions 'sb/redraw-window nil t)
-          (add-hook 'change-major-mode-hook 'sb/clear-stripes nil t)
-          (add-hook 'window-configuration-change-hook 'sb/redraw-all-windows nil t)
+          (sb/add-hooks hooks)
           (sb/redraw-all-windows))
         (progn
-          (remove-hook 'outline-view-change-hook schedule-redraw t)
-          (remove-hook 'hs-hide-hook schedule-redraw t)
-          (remove-hook 'hs-show-hook schedule-redraw t)
-          (remove-hook 'after-change-functions after-change t)
-          (remove-hook 'post-command-hook post-command t)
-          (remove-hook 'window-scroll-functions 'sb/redraw-window t)
-          (remove-hook 'change-major-mode-hook 'sb/clear-stripes t)
-          (remove-hook 'window-configuration-change-hook 'sb/redraw-all-windows t)
+          (sb/remove-hooks hooks)
           (sb/clear-stripes)
           ))))
 
@@ -246,38 +248,33 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
 (define-minor-mode stripe-table-mode
     "Stripe table mode"
   nil nil nil
-  (let (( after-change
-          (lambda (&rest ignore)
-            (setq stripe-buffer-modified-flag t)))
-        ( post-command
-          (lambda (&rest ignore)
-            (when stripe-buffer-modified-flag
-              (sb/redraw-all-tables)
-              (setq stripe-buffer-modified-flag nil))))
-        ( schedule-redraw
-          (lambda (&rest ignore)
-            (run-with-idle-timer 0 nil 'sb/redraw-all-tables))))
+  (let* (( after-change
+           (lambda (&rest ignore)
+             (setq stripe-buffer-modified-flag t)))
+         ( post-command
+           (lambda (&rest ignore)
+             (when stripe-buffer-modified-flag
+               (sb/redraw-all-tables)
+               (setq stripe-buffer-modified-flag nil))))
+         ( schedule-redraw
+           (lambda (&rest ignore)
+             (run-with-idle-timer 0 nil 'sb/redraw-all-tables)))
+         ( hooks
+           `((outline-view-change-hook . ,schedule-redraw)
+             (hs-hide-hook . ,schedule-redraw)
+             (hs-show-hook . ,schedule-redraw)
+             (after-change-functions . ,after-change)
+             (post-command-hook . ,post-command)
+             (window-scroll-functions . sb/redraw-all-tables)
+             (change-major-mode-hook . sb/clear-stripes)
+             (window-configuration-change-hook . 'sb/redraw-all-tables))))
     (if stripe-table-mode
         (progn
           (stripe-buffer-mode -1)
-          (add-hook 'outline-view-change-hook schedule-redraw nil t)
-          (add-hook 'hs-hide-hook schedule-redraw nil t)
-          (add-hook 'hs-show-hook schedule-redraw nil t)
-          (add-hook 'after-change-functions after-change nil t)
-          (add-hook 'post-command-hook post-command nil t)
-          (add-hook 'window-scroll-functions 'sb/redraw-all-tables nil t)
-          (add-hook 'change-major-mode-hook 'sb/clear-stripes nil t)
-          (add-hook 'window-configuration-change-hook 'sb/redraw-all-tables nil t)
+          (sb/add-hooks hooks)
           (sb/redraw-all-tables))
         (progn
-          (remove-hook 'outline-view-change-hook schedule-redraw t)
-          (remove-hook 'hs-hide-hook schedule-redraw t)
-          (remove-hook 'hs-show-hook schedule-redraw t)
-          (remove-hook 'after-change-functions after-change t)
-          (remove-hook 'post-command-hook post-command t)
-          (remove-hook 'window-scroll-functions 'sb/redraw-all-tables t)
-          (remove-hook 'change-major-mode-hook 'sb/clear-stripes t)
-          (remove-hook 'window-configuration-change-hook 'sb/redraw-all-tables t)
+          (sb/remove-hooks hooks)
           (sb/clear-stripes)
           ))))
 
