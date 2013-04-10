@@ -249,15 +249,15 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
          ( post-command
            (lambda (&rest ignore)
              (if sb/modified-flag
-                (sb/redraw-all-tables)
-                (run-with-idle-timer 0 nil 'sb/redraw-all-tables))
+                 (sb/redraw-all-tables)
+                 (run-with-idle-timer 0 nil 'sb/redraw-all-tables))
              (setq sb/modified-flag nil)))
          ( hooks
            `((after-change-functions . ,after-change)
              (post-command-hook . ,post-command)
              (window-scroll-functions . sb/redraw-all-tables)
              (change-major-mode-hook . sb/clear-stripes)
-             (window-configuration-change-hook . 'sb/redraw-all-tables))))
+             (window-configuration-change-hook . sb/redraw-all-tables))))
     (if stripe-table-mode
         (progn
           (stripe-buffer-mode -1)
