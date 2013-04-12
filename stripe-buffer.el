@@ -281,7 +281,8 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
 (defun stripe-listify-buffer ()
   "Turn on `stripe-buffer-mode' and `hl-line-mode'."
   (interactive)
-  (setq cursor-type t)
+  (setq sb/is-listified t)
+  (setq cursor-type nil)
   (stripe-buffer-mode 1)
   (setq-local face-remapping-alist
               `((hl-line stripe-hl-line)))
@@ -293,12 +294,14 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
 
 (defun stripe-wdired-enable-cursor ()
   (when sb/is-listified
+    (hl-line-mode -1)
     (setq cursor-type t)))
 
 (add-hook 'wdired-mode-hook 'stripe-wdired-enable-cursor)
 
 (defadvice wdired-finish-edit (before stripe-hide-cursor activate)
   (when sb/is-listified
+    (hl-line-mode 1)
     (setq cursor-type nil)))
 
 (provide 'stripe-buffer)
