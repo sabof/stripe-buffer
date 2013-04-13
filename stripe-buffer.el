@@ -157,22 +157,22 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
         (funcall draw-stripe stripe-height)
         ))))
 
-(defun sb/redraw-window (&optional window &rest ignore)
-  (let* (( region (sb/window-limits window))
-         ( old-overlays
-           (cl-remove-if-not
-            (lambda (ov) (overlay-get ov 'is-stripe))
-            (overlays-in (car region) (cdr region)))))
-    (setq sb/overlays
-          (cl-set-difference sb/overlays
-                             old-overlays))
-    (sb/redraw-regions (list region) old-overlays)
-    ))
+;; (defun sb/redraw-window (&optional window &rest ignore)
+;;   (let* (( region (sb/window-limits window))
+;;          ( old-overlays
+;;            (cl-remove-if-not
+;;             (lambda (ov) (overlay-get ov 'is-stripe))
+;;             (overlays-in (car region) (cdr region)))))
+;;     (setq sb/overlays
+;;           (cl-set-difference sb/overlays
+;;                              old-overlays))
+;;     (sb/redraw-regions (list region) old-overlays)
+;;     ))
 
-(defun sb/redraw-all-windows (&rest ignore)
-  (sb/redraw-regions (sb/buffer-visible-regions-compressed)
-                     (prog1 sb/overlays
-                       (setq sb/overlays nil))))
+;; (defun sb/redraw-all-windows (&rest ignore)
+;;   (sb/redraw-regions (sb/buffer-visible-regions-compressed)
+;;                      (prog1 sb/overlays
+;;                        (setq sb/overlays nil))))
 
 (defun sb/visible-table-ranges ()
   (let (( visible-ranges (sb/buffer-visible-regions-compressed))
@@ -185,10 +185,10 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
           )))
     (sb/compress-ranges ranges)))
 
-(defun sb/redraw-all-tables (&rest ignore)
-  (sb/redraw-regions (sb/visible-table-ranges)
-                     (prog1 sb/overlays
-                       (setq sb/overlays nil))))
+;; (defun sb/redraw-all-tables (&rest ignore)
+;;   (sb/redraw-regions (sb/visible-table-ranges)
+;;                      (prog1 sb/overlays
+;;                        (setq sb/overlays nil))))
 
 (defun sb/add-hooks (hooks)
   (cl-dolist (hook hooks)
@@ -209,13 +209,13 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
 
 (defun sb/post-command ()
   (when sb/modified-flag
-    (jit-lock-fontify-now sb/modified-flag (window-end))
+    ;; (jit-lock-fontify-now sb/modified-flag (window-end))
     ;; (remove-text-properties sb/modified-flag (window-end) '(face fontified))
     ;; (sb/redraw-region sb/modified-flag (window-end))
     ;; (sb/redraw-region (window-start) (window-end))
     ;; (sb/redraw-all-windows)
     ;; (run-with-idle-timer 0 nil 'sb/redraw-all-windows)
-    (message "iran")
+    ;; (message "iran")
 
     (setq sb/modified-flag nil)))
 
@@ -233,7 +233,6 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
           (sb/add-hooks hooks)
           ;; (sb/redraw-all-windows)
 
-
           (add-hook 'jit-lock-functions 'sb/redraw-region t t)
           (jit-lock-mode 1)
           )
@@ -245,14 +244,15 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
           )
         )))
 
-  (defun turn-on-stripe-buffer-mode ()
-    "Turn on `stripe-buffer-mode'."
-    (interactive)
-    (stripe-buffer-mode 1))
+(defun turn-on-stripe-buffer-mode ()
+  "Turn on `stripe-buffer-mode'."
+  (interactive)
+  (stripe-buffer-mode 1))
 
-  (define-minor-mode stripe-table-mode
-      "Stripe table mode"
-    nil nil nil
+(define-minor-mode stripe-table-mode
+    "Stripe table mode"
+  nil nil nil
+  (when nil
     (let* (( after-change
              (lambda (&rest ignore)
                (setq sb/modified-flag t)))
@@ -276,27 +276,27 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
           (progn
             (sb/remove-hooks hooks)
             (sb/clear-stripes)
-            ))))
+            )))))
 
-  (defun turn-on-stripe-table-mode ()
-    "Turn on `stripe-table-mode'."
-    (interactive)
-    (stripe-table-mode 1))
+(defun turn-on-stripe-table-mode ()
+  "Turn on `stripe-table-mode'."
+  (interactive)
+  (stripe-table-mode 1))
 
-  (defun org-table-stripes-enable ()
-    "Backward compatibility"
-    (interactive)
-    (stripe-table-mode 1))
+(defun org-table-stripes-enable ()
+  "Backward compatibility"
+  (interactive)
+  (stripe-table-mode 1))
 
-  (defun stripe-listify-buffer ()
-    "Turn on `stripe-buffer-mode' and `hl-line-mode'."
-    (interactive)
-    (setq sb/is-listified t)
-    (setq cursor-type nil)
-    (stripe-buffer-mode 1)
-    (setq-local face-remapping-alist
-                `((hl-line stripe-hl-line)))
-    (hl-line-mode 1))
+(defun stripe-listify-buffer ()
+  "Turn on `stripe-buffer-mode' and `hl-line-mode'."
+  (interactive)
+  (setq sb/is-listified t)
+  (setq cursor-type nil)
+  (stripe-buffer-mode 1)
+  (setq-local face-remapping-alist
+              `((hl-line stripe-hl-line)))
+  (hl-line-mode 1))
 
 (defadvice hl-line-highlight (after stripe-set-priority activate)
   (when stripe-buffer-mode
