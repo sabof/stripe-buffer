@@ -230,7 +230,7 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
   (let* (( after-change
            (lambda (&rest ignore)
              (setq sb/modified-flag t)
-             ;; For cases when a change is made not through a command
+             ;; For cases when a change is made by a timer, or a process filter
              (sb/set-timer 'sb/redraw-all-windows)))
          ( post-command
            (lambda (&rest ignore)
