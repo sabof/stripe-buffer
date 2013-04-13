@@ -75,8 +75,10 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
 (defvar sb/overlays nil)
 (defvar sb/is-listified nil)
 (defvar sb/modified-flag nil)
+(defvar sb/timer nil)
 (mapc 'make-variable-buffer-local
       '(sb/is-listified
+        sb/timer
         sb/modified-flag
         sb/overlays))
 
@@ -208,17 +210,35 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
 
 ;;; Interface
 
+(defun sb/set-timer (redraw-func)
+  (unless sb/timer
+    (setq sb/timer
+          (run-with-timer
+           0 nil `(lambda ()
+                    (with-current-buffer ,(current-buffer)
+                      (funcall ',redraw-func)
+                      (setq sb/timer nil)))))))
+
+(defun sb/cancel-timer ()
+  (when sb/timer
+    (cancel-timer sb/timer)
+    (setq sb/timer nil)))
+
 (define-minor-mode stripe-buffer-mode
     "Stripe buffer mode"
   nil nil nil
   (let* (( after-change
            (lambda (&rest ignore)
-             (setq sb/modified-flag t)))
+             (setq sb/modified-flag t)
+             ;; For cases when a change is made not through a command
+             (sb/set-timer 'sb/redraw-all-windows)))
          ( post-command
            (lambda (&rest ignore)
              (if sb/modified-flag
-                 (sb/redraw-all-windows)
-                 (run-with-idle-timer 0 nil 'sb/redraw-all-windows))
+                 (progn
+                   (sb/redraw-all-windows)
+                   (sb/cancel-timer))
+                 (sb/set-timer 'sb/redraw-all-windows))
              (setq sb/modified-flag nil)))
          ( hooks `((after-change-functions . ,after-change)
                    (post-command-hook . ,post-command)
@@ -245,12 +265,15 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
   nil nil nil
   (let* (( after-change
            (lambda (&rest ignore)
-             (setq sb/modified-flag t)))
+             (setq sb/modified-flag t)
+             (sb/set-timer 'sb/redraw-all-tables)))
          ( post-command
            (lambda (&rest ignore)
              (if sb/modified-flag
-                 (sb/redraw-all-tables)
-                 (run-with-idle-timer 0 nil 'sb/redraw-all-tables))
+                 (progn
+                   (sb/redraw-all-tables)
+                   (sb/cancel-timer))
+                 (sb/set-timer 'sb/redraw-all-tables))
              (setq sb/modified-flag nil)))
          ( hooks
            `((after-change-functions . ,after-change)
