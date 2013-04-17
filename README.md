@@ -26,6 +26,6 @@ cursor. It uses the `stripe-hl-line` face, which you might wish to customize.
 ### Adds stripes to tables
 
 You might want to have stripes only for tables. Whether a line will be
-considered a "table line" is determined by `stripe-in-table-regex`. The default setting supports org-mode and table.el tables, as well as tables printed by mysql.
+considered a "table line" is determined by `stripe-in-table-regex`. The default value supports org-mode and table.el tables, as well as tables printed by mysql.
 
     (add-hook 'org-mode-hook 'turn-on-stripe-table-mode)
