@@ -92,7 +92,7 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
 
 (defun sb/buffer-visible-regions (&optional buffer-or-name)
   (mapcar 'sb/window-limits
-          (get-buffer-window-list buffer-or-name nil 'visible)))
+          (get-buffer-window-list buffer-or-name nil t)))
 
 (defun sb/compress-ranges (ranges)
   (let* (( dirty (cl-sort (cl-copy-list ranges)
