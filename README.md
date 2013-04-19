@@ -23,7 +23,7 @@ cursor. It uses the `stripe-hl-line` face, which you might wish to customize.
 
     (add-hook 'dired-mode-hook 'stripe-listify-buffer)
 
-### Adds stripes to tables
+### Add stripes to tables
 
 You might want to have stripes only for tables. Whether a line will be
 considered a "table line" is determined by `stripe-in-table-regex`. The default value supports org-mode and table.el tables, as well as tables printed by mysql.

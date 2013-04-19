@@ -7,7 +7,7 @@
 ;; Maintainer: sabof <esabof@gmail.com>
 ;; URL: https://github.com/sabof/stripe-buffer
 ;; Package-Requires: ((cl-lib "1.0"))
-;; Version: 0.2
+;; Version: 0.2.1
 
 ;;; Commentary:
 
