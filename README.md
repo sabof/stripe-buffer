@@ -29,3 +29,17 @@ You might want to have stripes only for tables. Whether a line will be
 considered a "table line" is determined by `stripe-in-table-regex`. The default value supports org-mode and table.el tables, as well as tables printed by mysql.
 
     (add-hook 'org-mode-hook 'turn-on-stripe-table-mode)
+
+## Customization:
+
+### Faces
+
+stripe-highlight -- color of stripes
+
+stripe-hl-line -- color for hl-line, when using `stripe-listify-buffer`
+
+### Variables
+
+stripe-height -- height of the stripes
+
+stripe-in-table-regex -- Regex for determining whether a line is part of a table. Used in `stripe-table-mode`
