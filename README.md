@@ -34,12 +34,12 @@ considered a "table line" is determined by `stripe-in-table-regex`. The default 
 
 ### Faces
 
-stripe-highlight -- color of stripes
+`stripe-highlight` -- color of stripes
 
-stripe-hl-line -- color for hl-line, when using `stripe-listify-buffer`
+`stripe-hl-line` -- color for hl-line, when using `stripe-listify-buffer`
 
 ### Variables
 
-stripe-height -- height of the stripes
+`stripe-height` -- height of the stripes
 
-stripe-in-table-regex -- Regex for determining whether a line is part of a table. Used in `stripe-table-mode`
+`stripe-in-table-regex` -- Regex for determining whether a line is part of a table. Used in `stripe-table-mode`
