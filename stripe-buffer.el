@@ -334,6 +334,11 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
     (hl-line-mode 1)
     (setq cursor-type nil)))
 
+(defadvice image-dired-dired-toggle-marked-thumbs
+    (before disable-stripes activate)
+  (when stripe-buffer-mode
+    (stripe-buffer-mode -1)))
+
 (provide 'stripe-buffer)
 ;; Local Variables:
 ;; indent-tabs-mode: nil
