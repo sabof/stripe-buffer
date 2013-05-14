@@ -7,7 +7,8 @@
 ;; Maintainer: sabof <esabof@gmail.com>
 ;; URL: https://github.com/sabof/stripe-buffer
 ;; Package-Requires: ((cl-lib "1.0"))
-;; Version: 0.2.2
+;; Version: 20130512.351
+;; X-Original-Version: 0.2.2
 
 ;;; Commentary:
 
@@ -335,9 +336,11 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
     (setq cursor-type nil)))
 
 (defadvice image-dired-dired-toggle-marked-thumbs
-    (before disable-stripes activate)
+    (around disable-stripes activate)
   (when stripe-buffer-mode
-    (stripe-buffer-mode -1)))
+    (stripe-buffer-mode -1))
+  ad-do-it
+  (stripe-buffer-mode 1))
 
 (provide 'stripe-buffer)
 ;; Local Variables:
