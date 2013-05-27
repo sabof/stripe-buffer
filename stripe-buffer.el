@@ -335,9 +335,14 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
     (setq cursor-type nil)))
 
 (defadvice image-dired-dired-toggle-marked-thumbs
-    (before disable-stripes activate)
-  (when stripe-buffer-mode
-    (sb/clear-stripes)))
+    (around disable-stripes activate)
+  (let (( was-stripe-buffer-mode
+          stripe-buffer-mode))
+    (when was-stripe-buffer-mode
+      (stripe-buffer-mode -1))
+    ad-do-it
+    (when was-stripe-buffer-mode
+      (stripe-buffer-mode 1))))
 
 (provide 'stripe-buffer)
 ;; Local Variables:
