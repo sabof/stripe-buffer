@@ -213,8 +213,8 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
     (setq sb/timer
           (run-with-idle-timer
            0 nil (lambda (buffer redraw-func)
-                   (when (buffer-live-p (current-buffer))
-                     (with-current-buffer (current-buffer)
+                   (when (buffer-live-p buffer)
+                     (with-current-buffer buffer
                        (funcall redraw-func)
                        (setq sb/timer nil))))
            (current-buffer)
