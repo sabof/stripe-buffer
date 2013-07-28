@@ -170,13 +170,10 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
 
 (defun sb/redraw-window (&optional window &rest ignore)
   (let* (( region (sb/window-limits window))
-         ( old-overlays
-           (cl-remove-if-not
-            (lambda (ov) (overlay-get ov 'is-stripe))
-            (overlays-in (car region) (cdr region)))))
-    (setq sb/overlays
-          (cl-set-difference sb/overlays
-                             old-overlays))
+         ( old-overlays (cl-remove-if-not
+                         (lambda (ov) (overlay-get ov 'is-stripe))
+                         (overlays-in (car region) (cdr region)))))
+    (setq sb/overlays (cl-set-difference sb/overlays old-overlays))
     (sb/redraw-regions (list region) old-overlays)
     ))
 
@@ -216,9 +213,10 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
     (setq sb/timer
           (run-with-idle-timer
            0 nil `(lambda ()
-                    (with-current-buffer ,(current-buffer)
-                      (funcall ',redraw-func)
-                      (setq sb/timer nil)))))))
+                    (when (buffer-live-p ,(current-buffer))
+                      (with-current-buffer ,(current-buffer)
+                        (funcall ',redraw-func)
+                        (setq sb/timer nil))))))))
 
 (defun sb/cancel-timer ()
   (when sb/timer
