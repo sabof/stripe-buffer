@@ -92,7 +92,9 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
 
 (defun sb/buffer-visible-regions (&optional buffer-or-name)
   (mapcar 'sb/window-limits
-          (get-buffer-window-list buffer-or-name nil t)))
+          (cl-remove-if-not
+           (lambda (win) (frame-visible-p (window-frame win)))
+           (get-buffer-window-list buffer-or-name nil t))))
 
 (defun sb/compress-ranges (ranges)
   (let* (( dirty (cl-sort (cl-copy-list ranges)
@@ -131,7 +133,7 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
                    (progn
                      (move-overlay old-overlay start end)
                      old-overlay)
-                   (make-overlay start end)))))
+                 (make-overlay start end)))))
          ( draw-stripe
            (lambda (height)
              ;; `region' available through dynamic binding
@@ -142,9 +144,9 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
                                 (forward-line height)
                                 (if (<= (point) (cdr region))
                                     (point)
-                                    (progn
-                                      (goto-char (cdr region))
-                                      (point))))))
+                                  (progn
+                                    (goto-char (cdr region))
+                                    (point))))))
                       ( overlay (apply get-overlay-create stripe-region)))
                  (overlay-put overlay 'face stripe-highlight-face)
                  (overlay-put overlay 'is-stripe t)
@@ -156,8 +158,8 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
                    (progn
                      (forward-line (- stripe-height start-offset))
                      (funcall draw-stripe stripe-height))
-                   (funcall draw-stripe (- interval start-offset))
-                   )))))
+                 (funcall draw-stripe (- interval start-offset))
+                 )))))
     (save-excursion
       (cl-dolist (region regions)
         (goto-char (car region))
@@ -240,22 +242,23 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
                  (progn
                    (sb/redraw-all-windows)
                    (sb/cancel-timer))
-                 (sb/set-timer 'sb/redraw-all-windows))
+               (sb/set-timer 'sb/redraw-all-windows))
              (setq sb/modified-flag nil)))
          ( hooks `((after-change-functions . ,after-change)
                    (post-command-hook . ,post-command)
                    (window-scroll-functions . sb/redraw-window)
                    (change-major-mode-hook . sb/clear-stripes)
-                   (window-configuration-change-hook . sb/redraw-all-windows))))
+                   (window-configuration-change-hook . sb/redraw-all-windows)
+                   )))
     (if stripe-buffer-mode
         (progn
           (stripe-table-mode -1)
           (sb/add-hooks hooks)
           (sb/redraw-all-windows))
-        (progn
-          (sb/remove-hooks hooks)
-          (sb/clear-stripes)
-          ))))
+      (progn
+        (sb/remove-hooks hooks)
+        (sb/clear-stripes)
+        ))))
 
 ;;;###autoload
 (defun turn-on-stripe-buffer-mode ()
@@ -277,7 +280,7 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
                  (progn
                    (sb/redraw-all-tables)
                    (sb/cancel-timer))
-                 (sb/set-timer 'sb/redraw-all-tables))
+               (sb/set-timer 'sb/redraw-all-tables))
              (setq sb/modified-flag nil)))
          ( hooks
            `((after-change-functions . ,after-change)
@@ -290,10 +293,10 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
           (stripe-buffer-mode -1)
           (sb/add-hooks hooks)
           (sb/redraw-all-tables))
-        (progn
-          (sb/remove-hooks hooks)
-          (sb/clear-stripes)
-          ))))
+      (progn
+        (sb/remove-hooks hooks)
+        (sb/clear-stripes)
+        ))))
 
 ;;;###autoload
 (defun turn-on-stripe-table-mode ()
