@@ -72,15 +72,12 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
   :type 'string)
 
 (defvar stripe-highlight-face 'stripe-highlight)
-(defvar sb/overlays nil)
-(defvar sb/is-listified nil)
-(defvar sb/modified-flag nil)
-(defvar sb/timer nil)
-(mapc 'make-variable-buffer-local
-      '(sb/is-listified
-        sb/timer
-        sb/modified-flag
-        sb/overlays))
+
+(defvar-local sb/overlays nil)
+(defvar-local sb/is-listified nil)
+(defvar-local sb/modified-flag nil)
+(defvar-local sb/timer nil)
+(defvar sb/redraw-region-function 'sb/redraw-region)
 
 (defun sb/window-limits (&optional window)
   (save-excursion
@@ -123,51 +120,57 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
   (mapc 'delete-overlay sb/overlays)
   (setq sb/overlays nil))
 
-(defun sb/redraw-regions (regions available)
-  (let* (( interval
+(defun sb/redraw-region (start end get-overlay-create-function)
+  (let (( interval
            (* 2 stripe-height))
-         ( get-overlay-create
+        ( draw-stripe
+          (lambda (height)
+            ;; `region' available through dynamic binding
+            (when (< (point) end)
+              (let* (( stripe-region
+                       (list (point)
+                             (progn
+                               (forward-line height)
+                               (if (<= (point) end)
+                                   (point)
+                                 (progn
+                                   (goto-char end)
+                                   (point))))))
+                     ( overlay (apply get-overlay-create-function stripe-region)))
+                (overlay-put overlay 'face stripe-highlight-face)
+                (overlay-put overlay 'is-stripe t)
+                (push overlay sb/overlays)))))
+        ( goto-start-pos
+          (lambda ()
+            (let (( start-offset (mod (1- (line-number-at-pos)) interval)))
+              (if (< start-offset stripe-height) ; in first part
+                  (progn
+                    (forward-line (- stripe-height start-offset))
+                    (funcall draw-stripe stripe-height))
+                (funcall draw-stripe (- interval start-offset))
+                )))))
+    (funcall goto-start-pos)
+    (while (< (point) end)
+      (forward-line stripe-height)
+      (funcall draw-stripe stripe-height)
+      )
+    ))
+
+(defun sb/redraw-regions (regions available)
+  (let* (( get-overlay-create
            (lambda (start end)
              (let ((old-overlay (pop available)))
                (if old-overlay
                    (progn
                      (move-overlay old-overlay start end)
                      old-overlay)
-                 (make-overlay start end)))))
-         ( draw-stripe
-           (lambda (height)
-             ;; `region' available through dynamic binding
-             (when (< (point) (cdr region))
-               (let* (( stripe-region
-                        (list (point)
-                              (progn
-                                (forward-line height)
-                                (if (<= (point) (cdr region))
-                                    (point)
-                                  (progn
-                                    (goto-char (cdr region))
-                                    (point))))))
-                      ( overlay (apply get-overlay-create stripe-region)))
-                 (overlay-put overlay 'face stripe-highlight-face)
-                 (overlay-put overlay 'is-stripe t)
-                 (push overlay sb/overlays)))))
-         ( goto-start-pos
-           (lambda ()
-             (let (( start-offset (mod (1- (line-number-at-pos)) interval)))
-               (if (< start-offset stripe-height) ; in first part
-                   (progn
-                     (forward-line (- stripe-height start-offset))
-                     (funcall draw-stripe stripe-height))
-                 (funcall draw-stripe (- interval start-offset))
-                 )))))
+                 (make-overlay start end))))))
     (save-excursion
       (cl-dolist (region regions)
         (goto-char (car region))
-        (funcall goto-start-pos)
-        (while (< (point) (cdr region))
-          (forward-line stripe-height)
-          (funcall draw-stripe stripe-height)
-          ))
+        (funcall sb/redraw-region-function
+                 (car region) (cdr region)
+                 get-overlay-create))
       (mapc 'delete-overlay available))))
 
 (defun sb/redraw-window (&optional window &rest ignore)
