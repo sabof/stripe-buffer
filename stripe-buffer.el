@@ -137,20 +137,20 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
          ( draw-stripe
            (lambda (height)
              ;; `region' available through dynamic binding
-             (when (< (point) (cdr region))
-               (let* (( stripe-region
-                        (list (point)
-                              (progn
-                                (forward-line height)
-                                (if (<= (point) (cdr region))
-                                    (point)
-                                  (progn
-                                    (goto-char (cdr region))
-                                    (point))))))
-                      ( overlay (apply get-overlay-create stripe-region)))
-                 (overlay-put overlay 'face stripe-highlight-face)
-                 (overlay-put overlay 'is-stripe t)
-                 (push overlay sb/overlays)))))
+             (let ((region-end (with-no-warnings (cdr region))))
+               (when (< (point) region-end)
+                 (let* (( stripe-region
+                          (list (point)
+                                (progn
+                                  (forward-line height)
+                                  (if (<= (point) region-end)
+                                      (point)
+                                    (goto-char region-end)
+                                    (point)))))
+                        ( overlay (apply get-overlay-create stripe-region)))
+                   (overlay-put overlay 'face stripe-highlight-face)
+                   (overlay-put overlay 'is-stripe t)
+                   (push overlay sb/overlays))))))
          ( goto-start-pos
            (lambda ()
              (let (( start-offset (mod (1- (line-number-at-pos)) interval)))
