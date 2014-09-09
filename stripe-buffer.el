@@ -77,7 +77,6 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
 (defvar-local sb/is-listified nil)
 (defvar-local sb/modified-flag nil)
 (defvar-local sb/timer nil)
-(defvar sb/redraw-region-function 'sb/redraw-region)
 
 (defun sb/window-limits (&optional window)
   (save-excursion
@@ -168,8 +167,7 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
     (save-excursion
       (cl-dolist (region regions)
         (goto-char (car region))
-        (funcall sb/redraw-region-function
-                 (car region) (cdr region)
+        (sb/redraw-region (car region) (cdr region)
                  get-overlay-create))
       (mapc 'delete-overlay available))))
 
@@ -182,7 +180,7 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
     (sb/redraw-regions (list region) old-overlays)
     ))
 
-(defun sb/redraw-all-windows (&rest ignore)
+(defun sb/redraw-buffer-in-all-windows (&rest ignore)
   (sb/redraw-regions (sb/buffer-visible-regions-compressed)
                      (prog1 sb/overlays
                        (setq sb/overlays nil))))
@@ -238,30 +236,29 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
            (lambda (&rest ignore)
              (setq sb/modified-flag t)
              ;; For cases when a change is made by a timer, or a process filter
-             (sb/set-timer 'sb/redraw-all-windows)))
+             (sb/set-timer 'sb/redraw-buffer-in-all-windows)))
          ( post-command
            (lambda (&rest ignore)
              (if sb/modified-flag
                  (progn
-                   (sb/redraw-all-windows)
+                   (sb/redraw-buffer-in-all-windows)
                    (sb/cancel-timer))
-               (sb/set-timer 'sb/redraw-all-windows))
+               (sb/set-timer 'sb/redraw-buffer-in-all-windows))
              (setq sb/modified-flag nil)))
          ( hooks `((after-change-functions . ,after-change)
                    (post-command-hook . ,post-command)
                    (window-scroll-functions . sb/redraw-window)
                    (change-major-mode-hook . sb/clear-stripes)
-                   (window-configuration-change-hook . sb/redraw-all-windows)
+                   (window-configuration-change-hook . sb/redraw-buffer-in-all-windows)
                    )))
     (if stripe-buffer-mode
         (progn
           (stripe-table-mode -1)
           (sb/add-hooks hooks)
-          (sb/redraw-all-windows))
-      (progn
-        (sb/remove-hooks hooks)
-        (sb/clear-stripes)
-        ))))
+          (sb/redraw-buffer-in-all-windows))
+      (sb/remove-hooks hooks)
+      (sb/clear-stripes)
+      )))
 
 ;;;###autoload
 (defun turn-on-stripe-buffer-mode ()
