@@ -192,7 +192,8 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
       (save-excursion
         (goto-char (car vr))
         (while (and (<= (point) (cdr vr))
-                    (re-search-forward stripe-in-table-regex (cdr vr) t))
+                    (re-search-forward stripe-in-table-regex (cdr vr) t)
+                    (not (invisible-p (match-beginning 0))))
           (push (cons (match-beginning 1) (match-end 1)) ranges)
           )))
     (sb/compress-ranges ranges)))
