@@ -120,34 +120,34 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
   (setq sb/overlays nil))
 
 (defun sb/redraw-region (start end get-overlay-create-function)
-  (let (( interval
+  (let* (( interval
            (* 2 stripe-height))
-        ( draw-stripe
-          (lambda (height)
-            ;; `region' available through dynamic binding
-            (when (< (point) end)
-              (let* (( stripe-region
-                       (list (point)
-                             (progn
-                               (forward-line height)
-                               (if (<= (point) end)
-                                   (point)
-                                 (progn
-                                   (goto-char end)
-                                   (point))))))
-                     ( overlay (apply get-overlay-create-function stripe-region)))
-                (overlay-put overlay 'face stripe-highlight-face)
-                (overlay-put overlay 'is-stripe t)
-                (push overlay sb/overlays)))))
-        ( goto-start-pos
-          (lambda ()
-            (let (( start-offset (mod (1- (line-number-at-pos)) interval)))
-              (if (< start-offset stripe-height) ; in first part
-                  (progn
-                    (forward-line (- stripe-height start-offset))
-                    (funcall draw-stripe stripe-height))
-                (funcall draw-stripe (- interval start-offset))
-                )))))
+         ( draw-stripe
+           (lambda (height)
+             ;; `region' available through dynamic binding
+             (when (< (point) end)
+               (let* (( stripe-region
+                        (list (point)
+                              (progn
+                                (forward-line height)
+                                (if (<= (point) end)
+                                    (point)
+                                  (progn
+                                    (goto-char end)
+                                    (point))))))
+                      ( overlay (apply get-overlay-create-function stripe-region)))
+                 (overlay-put overlay 'face stripe-highlight-face)
+                 (overlay-put overlay 'is-stripe t)
+                 (push overlay sb/overlays)))))
+         ( goto-start-pos
+           (lambda ()
+             (let (( start-offset (mod (1- (line-number-at-pos)) interval)))
+               (if (< start-offset stripe-height) ; in first part
+                   (progn
+                     (forward-line (- stripe-height start-offset))
+                     (funcall draw-stripe stripe-height))
+                 (funcall draw-stripe (- interval start-offset))
+                 )))))
     (funcall goto-start-pos)
     (while (< (point) end)
       (forward-line stripe-height)
