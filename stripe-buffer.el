@@ -339,6 +339,11 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
     (hl-line-mode 1)
     (setq cursor-type nil)))
 
+(defadvice wdired-abort-changes (before stripe-hide-cursor activate)
+  (when sb/is-listified
+    (hl-line-mode 1)
+    (setq cursor-type nil)))
+
 (defadvice image-dired-dired-toggle-marked-thumbs
     (around disable-stripes activate)
   (let (( was-stripe-buffer-mode
