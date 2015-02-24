@@ -59,6 +59,36 @@
   "Bold face for highlighting the current line in Hl-Line mode."
   :group 'stripe-buffer)
 
+(defface stripe-dired-subtree-depth-1-face
+  '((t (:background "#252e30")))
+  "Background for depth 1 subtrees"
+  :group 'stripe-buffer)
+
+(defface stripe-dired-subtree-depth-2-face
+  '((t (:background "#232a2b")))
+  "Background for depth 2 subtrees"
+  :group 'stripe-buffer)
+
+(defface stripe-dired-subtree-depth-3-face
+  '((t (:background "#212627")))
+  "Background for depth 3 subtrees"
+  :group 'stripe-buffer)
+
+(defface stripe-dired-subtree-depth-4-face
+  '((t (:background "#1e2223")))
+  "Background for depth 4 subtrees"
+  :group 'stripe-buffer)
+
+(defface stripe-dired-subtree-depth-5-face
+  '((t (:background "#1c1d1e")))
+  "Background for depth 5 subtrees"
+  :group 'stripe-buffer)
+
+(defface stripe-dired-subtree-depth-6-face
+  '((t (:background "#1a191a")))
+  "Background for depth 6 subtrees"
+  :group 'stripe-buffer)
+
 (defcustom stripe-height 1
   "Height of stripes."
   :group 'stripe-buffer
@@ -119,6 +149,14 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
   (mapc 'delete-overlay sb/overlays)
   (setq sb/overlays nil))
 
+(defun sb/subtree-p (depth)
+  "Predicate current line is in subtree."
+  (when (featurep 'dired-subtree)
+  (save-excursion
+    (beginning-of-line)
+    (string= (apply #'concat (make-list depth dired-subtree-line-prefix))
+             (overlay-get (dired-subtree--get-ov) 'line-prefix)))))
+
 (defun sb/redraw-region (start end get-overlay-create-function)
   (let* (( interval
            (* 2 stripe-height))
@@ -136,9 +174,25 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
                                     (goto-char end)
                                     (point))))))
                       ( overlay (apply get-overlay-create-function stripe-region)))
-                 (overlay-put overlay 'face stripe-highlight-face)
-                 (overlay-put overlay 'is-stripe t)
-                 (push overlay sb/overlays)))))
+
+                 (cond
+                  ((unless (require 'dired-subtree nil t)
+                       (overlay-put overlay 'face stripe-highlight-face)
+                       (overlay-put overlay 'is-stripe t)
+                       (push overlay sb/overlays)))
+                  ((unless (dired-subtree--get-ov)
+                     (overlay-put overlay 'face stripe-highlight-face)
+                     (overlay-put overlay 'is-stripe t)
+                     (push overlay sb/overlays)))
+                  (t
+                     (overlay-put overlay 'face
+                                  (intern (format
+                                           "stripe-dired-subtree-depth-%d-face"
+                                           (cl-loop for x in (number-sequence 1 6)
+                                                    when (sb/subtree-p x)
+                                                    return x))))
+                     (overlay-put overlay 'is-stripe t)
+                     (push overlay sb/overlays)))))))
          ( goto-start-pos
            (lambda ()
              (let (( start-offset (mod (1- (line-number-at-pos)) interval)))
