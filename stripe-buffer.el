@@ -174,14 +174,12 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
                                     (goto-char end)
                                     (point))))))
                       ( overlay (apply get-overlay-create-function stripe-region)))
-
-                 (cond
-                  ((unless (and (fboundp 'dired-subtree--get-ov)
-                                (dired-subtree--get-ov))
-                     (overlay-put overlay 'face stripe-highlight-face)
-                     (overlay-put overlay 'is-stripe t)
-                     (push overlay sb/overlays)))
-                  (t
+                  (if (not (and (fboundp 'dired-subtree--get-ov)
+                                (dired-subtree--get-ov)))
+                      (progn
+                        (overlay-put overlay 'face stripe-highlight-face)
+                        (overlay-put overlay 'is-stripe t)
+                        (push overlay sb/overlays))
                      (overlay-put overlay 'face
                                   (intern (format
                                            "stripe-dired-subtree-depth-%d-face"
@@ -189,7 +187,7 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
                                                     when (sb/subtree-p x)
                                                     return x))))
                      (overlay-put overlay 'is-stripe t)
-                     (push overlay sb/overlays)))))))
+                     (push overlay sb/overlays))))))
          ( goto-start-pos
            (lambda ()
              (let (( start-offset (mod (1- (line-number-at-pos)) interval)))
