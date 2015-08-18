@@ -176,10 +176,11 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
                       ( overlay (apply get-overlay-create-function stripe-region)))
 
                  (cond
-                  ((unless (fboundp 'dired-subtree--get-ov)
-                       (overlay-put overlay 'face stripe-highlight-face)
-                       (overlay-put overlay 'is-stripe t)
-                       (push overlay sb/overlays)))
+                  ((unless (and (fboundp 'dired-subtree--get-ov)
+                                (dired-subtree--get-ov))
+                     (overlay-put overlay 'face stripe-highlight-face)
+                     (overlay-put overlay 'is-stripe t)
+                     (push overlay sb/overlays)))
                   (t
                      (overlay-put overlay 'face
                                   (intern (format
