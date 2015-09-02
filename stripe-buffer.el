@@ -141,7 +141,7 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
                  (push overlay sb/overlays)))))
          ( goto-start-pos
            (lambda ()
-             (let (( start-offset (mod (1- (line-number-at-pos)) interval)))
+             (let (( start-offset (mod (1- (string-to-number (format-mode-line "%l"))) interval)))
                (if (< start-offset stripe-height) ; in first part
                    (progn
                      (forward-line (- stripe-height start-offset))
