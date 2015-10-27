@@ -327,6 +327,10 @@ Used by `stripe-table-mode' Only the first matching group will be painted."
   (when stripe-buffer-mode
     (overlay-put hl-line-overlay 'priority 10)))
 
+(defadvice global-hl-line-highlight (after stripe-set-priority activate)
+  (when stripe-buffer-mode
+    (overlay-put global-hl-line-overlay 'priority 10)))
+
 (defun stripe-wdired-enable-cursor ()
   (when sb/is-listified
     (hl-line-mode -1)
